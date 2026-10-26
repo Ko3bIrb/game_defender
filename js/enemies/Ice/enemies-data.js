@@ -1,7 +1,7 @@
 const ENEMIES_DATA = {
     // ── НАЗЕМНЫЕ ──
     ice_skeleton: { 
-        name:'Мёрзлый Скелет', baseHp:18, speed:2.5, damage:1, reward:1, armor:0, color:0x9ab0c0, size:1.0, flying:false,
+        name:'Мёрзлый Скелет', baseHp:18, speed:2.5, damage:1, reward:1, armor:0, color:0x9ab0c0, size:1.6, flying:false,
         walk: { bobFreq: 9.5, bobAmp: 0.07, swayAmp: 0.09, leanAmp: 0.05 }
     },
     ice_golem: { 
@@ -21,7 +21,7 @@ const ENEMIES_DATA = {
 
     // ── ВОЗДУШНЫЕ ──
     blizzard_spirit: { 
-        name:'Метель-Дух', baseHp:54, speed:3.5, damage:1, reward:4, armor:0, color:0xaaddff, size:1.1, flying:true,
+        name:'Метель-Дух', baseHp:54, speed:3.5, damage:1, reward:4, armor:0, color:0xaaddff, size:1.65, flying:true,
         walk: { bobFreq: 4, bobAmp: 0.1, swayAmp: 0.12, leanAmp: 0.02 }
     },
     ice_harpy: { 
