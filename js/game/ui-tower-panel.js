@@ -1,5 +1,8 @@
 let selectedTower = null;
 let _mouseX = 0, _mouseY = 0;
+// Кеш последней позиции мыши, для которой пересчитывали панель.
+// Позволяет полностью пропускать пересчёт, когда мышь стоит на месте.
+let _lastPanelX = -99999, _lastPanelY = -99999;
 
 function initTowerPanel() {
     refreshTowerPanel();
@@ -15,6 +18,9 @@ function initTowerPanel() {
 
 function selectTower(tower) {
     selectedTower = tower;
+    // Форсируем пересчёт при следующем кадре, даже если мышь не двигалась.
+    _lastPanelX = -99999;
+    _lastPanelY = -99999;
     refreshTowerPanel();
     updateRangeCircle();
 }
@@ -26,22 +32,31 @@ function deselectTower() {
 }
 
 function updateTowerPanelPosition() {
-    const panel = document.getElementById('tower-panel');
     const line = document.getElementById('tower-pointer');
 
-    if (!selectedTower || panel.classList.contains('hidden')) {
-        if (line) line.style.display = 'none';
+    if (!selectedTower) {
+        if (line && line.style.display !== 'none') line.style.display = 'none';
+        return;
+    }
+    const panel = document.getElementById('tower-panel');
+    if (!panel || panel.classList.contains('hidden')) {
+        if (line && line.style.display !== 'none') line.style.display = 'none';
         return;
     }
 
     // На мобильном — фиксированная панель снизу (без 3D-наклона и без линии)
     if (IS_MOBILE) {
-        if (line) line.style.display = 'none';
+        if (line && line.style.display !== 'none') line.style.display = 'none';
         panel.style.transform = 'translateX(-50%)';
         return;
     }
 
-    if (line) line.style.display = 'block';
+    // Пропускаем тяжёлую работу, если мышь не двигалась — getBoundingClientRect() не зовём.
+    if (_mouseX === _lastPanelX && _mouseY === _lastPanelY) return;
+    _lastPanelX = _mouseX;
+    _lastPanelY = _mouseY;
+
+    if (line && line.style.display !== 'block') line.style.display = 'block';
 
     const vector = selectedTower.position.clone();
     vector.y += 1.0;

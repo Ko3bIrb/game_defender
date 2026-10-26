@@ -3,6 +3,8 @@ const lavaPools = [];
 const dyingEnemies = [];
 let _enemyIdCounter = 0;
 
+const _scratchDir = new THREE.Vector3();
+
 const DIE_FALL_TIME = 0.6;
 const DIE_LIE_TIME  = 9.0;
 const DIE_FADE_TIME = 1.5;
@@ -179,13 +181,16 @@ function killEnemy(e, reward) {
         GameState.kills++;
 
         if (data.isBoss) {
+            // Босс: смерть → потом тихое празднование монет
             spawnCoinBurst(e.pos.clone().setY(e.baseY), { count: 45, ttl: 3.0 });
             SFX.death();
-            for (let i = 0; i < 6; i++) setTimeout(() => SFX.coin(), i * 80);
+            setTimeout(() => {
+                for (let i = 0; i < 4; i++) setTimeout(() => SFX.coin(), i * 130);
+            }, 450);
         } else {
+            // Обычный монстр: ТОЛЬКО звук смерти (монета убрана)
             spawnCoinBurst(e.pos.clone().setY(e.baseY));
             SFX.death();
-            playCoin();
         }
     }
 
@@ -357,8 +362,8 @@ function updateEnemies(dt) {
         e.pos.lerpVectors(from, to, e.progress);
         e.group.position.set(e.pos.x, e.baseY, e.pos.z);
 
-        const dir = new THREE.Vector3().subVectors(to, from).normalize();
-        e.group.rotation.y = Math.atan2(dir.x, dir.z);
+        _scratchDir.subVectors(to, from).normalize();
+        e.group.rotation.y = Math.atan2(_scratchDir.x, _scratchDir.z);
 
         _applyWalkAnimation(e, speed, dt);
 

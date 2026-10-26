@@ -2,6 +2,12 @@ const buildTowers = [];
 let buildingType = null;
 let ghostTower = null;
 
+// ─── Кеш баффов от Усилителей ───
+// Инвалидируется при постройке/улучшении/продаже любой башни.
+// Пересчёт O(T²) происходит только при изменении состава, а не каждый кадр.
+let _towersBuffsDirty = true;
+function invalidateTowerBuffs() { _towersBuffsDirty = true; }
+
 function enterBuildMode(typeId) {
     exitBuildMode();
     const data = TOWERS_DATA[typeId];
@@ -101,6 +107,7 @@ function tryBuildAt(spot) {
     buildTowers.push(tower);
     spot.occupied = true;
     spot.tower = tower;
+    invalidateTowerBuffs();
 
     SFX.build();
     exitBuildMode();
@@ -112,6 +119,7 @@ function applyTowerStats(tower) {
     const stats = getTowerStatsForLevel(tower.type, tower.level);
     tower.stats = stats;
     tower.range = stats.range;
+    tower.rangeSq = stats.range * stats.range;   // квадрат радиуса — для sqrt-free проверок
     tower.damage = stats.damage;
     tower.fireRate = stats.fireRate;
 }
@@ -123,6 +131,7 @@ function upgradeTower(tower) {
 
     tower.level++;
     applyTowerStats(tower);
+    invalidateTowerBuffs();
 
     scene.remove(tower.mesh);
     const newMesh = buildTowerModel(tower.type, tower.level);
@@ -146,6 +155,7 @@ function sellTower(tower) {
     scene.remove(tower.mesh);
     const idx = buildTowers.indexOf(tower);
     if (idx >= 0) buildTowers.splice(idx, 1);
+    invalidateTowerBuffs();
     SFX.sell();
     if (selectedTower === tower) deselectTower();
     return true;

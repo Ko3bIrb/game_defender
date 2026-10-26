@@ -70,7 +70,6 @@
                 width: auto !important;
             }
 
-            /* Инфо-элементы НЕ СЖИМАЮТСЯ */
             .hud-item {
                 order: 0 !important;
                 flex: 0 0 auto !important;
@@ -87,7 +86,6 @@
             }
             .hud-icon { font-size: clamp(6px, 1.2vw, 12px) !important; }
 
-            /* Центральные кнопки сжимаются */
             .hud-center-group {
                 order: 1 !important;
                 position: static !important;
@@ -112,7 +110,6 @@
                 text-overflow: ellipsis;
             }
 
-            /* Speed-group — справа, не сжимается */
             .hud-speed-group {
                 order: 999 !important;
                 margin-left: auto !important;
@@ -377,6 +374,7 @@
         <div class="hud-item" id="hud-timer"><span class="hud-icon">⏱</span> <span class="hud-val">--</span></div>
 
         <div class="hud-center-group">
+            <button class="hud-btn" id="hud-menu">🏠 Меню</button>
             <button class="hud-btn" id="hud-maps">🗺️ Карты</button>
             <button class="hud-btn" id="hud-difficulty">⚙️ Сложность</button>
             <button class="hud-btn" id="hud-rules">📜 Правила</button>
@@ -401,6 +399,21 @@
             <div id="end-stars"></div>
             <div id="end-info"></div>
             <button id="end-restart">Заново</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         МОДАЛКА ВЫХОДА В ГЛАВНОЕ МЕНЮ
+         ═══════════════════════════════════════════ -->
+    <div id="exit-modal" class="hidden">
+        <div class="exit-box">
+            <div class="exit-icon">🚪</div>
+            <div class="exit-title">Выйти в меню?</div>
+            <div class="exit-text">Текущий прогресс забега будет потерян.</div>
+            <div class="exit-actions">
+                <button class="exit-btn cancel"  id="exit-cancel">Остаться</button>
+                <button class="exit-btn confirm" id="exit-confirm">Выйти</button>
+            </div>
         </div>
     </div>
 

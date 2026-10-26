@@ -179,6 +179,12 @@ function _dist2D(a, b) {
     return Math.sqrt(dx*dx + dz*dz);
 }
 
+// ─── sqrt-free вариант для горячих циклов ───
+function _dist2DSq(a, b) {
+    const dx = a.x - b.x, dz = a.z - b.z;
+    return dx * dx + dz * dz;
+}
+
 function updateTurretRotation(tw, target, dt) {
     if (!tw.mesh || !tw.mesh.userData || !tw.mesh.userData.turret) return;
     const turret = tw.mesh.userData.turret;
@@ -197,16 +203,19 @@ function findTarget(tw) {
     let best = null, bestScore = -Infinity;
     const canAir = TOWERS_DATA[tw.type].canHitAir;
     const prio = TOWERS_DATA[tw.type].priority || 'progress';
+    const rangeSq = tw.rangeSq;
+    const minRange = (tw.type === 'mortar') ? (tw.stats.minRange || 0) : 0;
+    const minRangeSq = minRange * minRange;
 
     for (const e of enemies) {
         if (!e.alive) continue;
         if (e.flying && !canAir) continue;
         if (prio === 'air' && !e.flying) continue;
-        const d = _dist2D(e.pos, tw.position);
-        if (d > tw.range) continue;
-        if (tw.type === 'mortar' && d < (tw.stats.minRange || 0)) continue;
+        const dSq = _dist2DSq(e.pos, tw.position);
+        if (dSq > rangeSq) continue;
+        if (minRange > 0 && dSq < minRangeSq) continue;
 
-        let score = (e.pathIndex + e.progress) * 1000000 + e.hp;
+        const score = (e.pathIndex + e.progress) * 1000000 + e.hp;
         if (score > bestScore) { bestScore = score; best = e; }
     }
     return best;
@@ -344,9 +353,10 @@ function updateMortarProjectiles(dt) {
             spawnExplosion(p.end, 0xffaa22, 1.4);
             const dmg = p.tw.damage * (1 + (p.tw.activeBuff || 0));
             const aoe = p.tw.stats.aoe || 4.5;
+            const aoeSq = aoe * aoe;
             for (const e of enemies) {
                 if (!e.alive || e.flying) continue;
-                if (_dist2D(e.pos, p.targetPos) <= aoe) {
+                if (_dist2DSq(e.pos, p.targetPos) <= aoeSq) {
                     e.hp -= _applyArmor(dmg, e, p.tw.stats.armorPierce || 0);
                     updateHpBar(e);
                     if (e.hp <= 0) killEnemy(e, true);
@@ -396,16 +406,21 @@ function updateTowersCombat(dt) {
     const t = GameState.gameTime;
 
     // ─── ПЕРЕСЧЁТ БАФФОВ ОТ УСИЛИТЕЛЕЙ ───
-    for (const tw of buildTowers) {
-        if (tw.type === 'amp') { tw.activeBuff = 0; continue; }
-        let total = 0;
-        for (const other of buildTowers) {
-            if (other.type !== 'amp') continue;
-            if (_dist2D(tw.position, other.position) <= other.range) {
-                total += (other.stats.buffPercent || 0) / 100;
+    // Только когда состав/уровень башен изменился (флаг выставляют build/upgrade/sell).
+    // Было: O(T²) каждый кадр. Стало: 0 в стабильном бою.
+    if (_towersBuffsDirty) {
+        for (const tw of buildTowers) {
+            if (tw.type === 'amp') { tw.activeBuff = 0; continue; }
+            let total = 0;
+            for (const other of buildTowers) {
+                if (other.type !== 'amp') continue;
+                if (_dist2DSq(tw.position, other.position) <= other.rangeSq) {
+                    total += (other.stats.buffPercent || 0) / 100;
+                }
             }
+            tw.activeBuff = total;
         }
-        tw.activeBuff = total;
+        _towersBuffsDirty = false;
     }
 
     for (const tw of buildTowers) {
@@ -413,7 +428,7 @@ function updateTowersCombat(dt) {
             let hasEnemyInRange = false;
             for (const e of enemies) {
                 if (!e.alive || e.flying || e.slowImmune) continue;
-                if (_dist2D(e.pos, tw.position) <= tw.range) {
+                if (_dist2DSq(e.pos, tw.position) <= tw.rangeSq) {
                     e.slowFactor = Math.max(e.slowFactor, (tw.stats.slowPercent || 40) / 100);
                     e.slowUntil = t + 0.3;
                     hasEnemyInRange = true;
@@ -507,7 +522,7 @@ function updateTowersCombat(dt) {
                 tw.shotCount = 0;
                 for (const e of enemies) {
                     if (!e.alive || !e.flying) continue;
-                    if (_dist2D(e.pos, tw.position) <= tw.range) {
+                    if (_dist2DSq(e.pos, tw.position) <= tw.rangeSq) {
                         e.hp -= (tw.stats.karmaDmg || 45) * (1 + (tw.activeBuff || 0));
                         spawnKarmaPillar(e.pos.clone().setY(0));
                     }

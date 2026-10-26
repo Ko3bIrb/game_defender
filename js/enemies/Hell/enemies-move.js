@@ -3,10 +3,11 @@ const lavaPools = [];
 const dyingEnemies = [];
 let _enemyIdCounter = 0;
 
-// ─── Тайминги анимации смерти (в игровых секундах) ───
-const DIE_FALL_TIME = 0.6;   // падение набок
-const DIE_LIE_TIME  = 9.0;   // лежит на земле
-const DIE_FADE_TIME = 1.5;   // растворение
+const _scratchDir = new THREE.Vector3();
+
+const DIE_FALL_TIME = 0.6;
+const DIE_LIE_TIME  = 9.0;
+const DIE_FADE_TIME = 1.5;
 const DIE_DURATION  = DIE_FALL_TIME + DIE_LIE_TIME + DIE_FADE_TIME;
 
 function _applyWalkAnimation(e, speed, dt) {
@@ -54,7 +55,6 @@ function _applyWalkAnimation(e, speed, dt) {
     }
 }
 
-// ─── АНИМАЦИЯ СМЕРТИ: падение → лёжка → растворение ───
 function updateDyingEnemies(dt) {
     const t = GameState.gameTime;
 
@@ -82,29 +82,21 @@ function updateDyingEnemies(dt) {
         let rotZ;
 
         if (elapsed < DIE_FALL_TIME) {
-            // ─── Фаза 1: падение ───
             const p = elapsed / DIE_FALL_TIME;
-            const ease = 1 - Math.pow(1 - p, 3);   // ease-out — быстро заваливается
-
-            // короткий подскок в начале
+            const ease = 1 - Math.pow(1 - p, 3);
             const jump = p < 0.35
                 ? Math.sin((p / 0.35) * Math.PI) * 0.22
                 : 0;
-
             y = e.dyingStartY + jump - (e.dyingStartY - e.dyingTargetY) * ease;
             rotZ = e.dyingStartRotZ + (Math.PI / 2 * e.dyingTiltDir) * ease;
             scale = 1 + Math.sin(p * Math.PI) * 0.06;
             opacity = 1;
-
         } else if (elapsed < DIE_FALL_TIME + DIE_LIE_TIME) {
-            // ─── Фаза 2: лежит на земле ───
             y = e.dyingTargetY;
             rotZ = e.dyingStartRotZ + Math.PI / 2 * e.dyingTiltDir;
             scale = 1;
             opacity = 1;
-
         } else {
-            // ─── Фаза 3: растворение ───
             const p = (elapsed - DIE_FALL_TIME - DIE_LIE_TIME) / DIE_FADE_TIME;
             const ease = p * p;
             y = e.dyingTargetY;
@@ -189,13 +181,16 @@ function killEnemy(e, reward) {
         GameState.kills++;
 
         if (data.isBoss) {
+            // Босс: смерть → потом тихое празднование монет
             spawnCoinBurst(e.pos.clone().setY(e.baseY), { count: 45, ttl: 3.0 });
             SFX.death();
-            for (let i = 0; i < 6; i++) setTimeout(() => SFX.coin(), i * 80);
+            setTimeout(() => {
+                for (let i = 0; i < 4; i++) setTimeout(() => SFX.coin(), i * 130);
+            }, 450);
         } else {
+            // Обычный монстр: ТОЛЬКО звук смерти (монета убрана)
             spawnCoinBurst(e.pos.clone().setY(e.baseY));
             SFX.death();
-            playCoin();
         }
     }
 
@@ -227,7 +222,6 @@ function killEnemy(e, reward) {
 
     spawnDeathParticles(e.pos.clone().setY(e.baseY), data.color);
 
-    // HP-бар убираем сразу
     if (e.hpBar) {
         scene.remove(e.hpBar);
         e.hpBar.traverse(o => {
@@ -239,11 +233,9 @@ function killEnemy(e, reward) {
         e.hpBar = null;
     }
 
-    // ─── Подготовка анимации смерти ───
     e.dyingStartTime = GameState.gameTime;
     e.dyingStartY = e.group.position.y;
     e.dyingStartRotZ = e.group.rotation.z;
-    // Цель по высоте — почти на земле. Учитываем размер, чтобы крупные не закапывались глубоко
     e.dyingTargetY = Math.max(0.08, data.size * 0.15);
     e.dyingTiltDir = Math.random() < 0.5 ? 1 : -1;
 
@@ -370,8 +362,8 @@ function updateEnemies(dt) {
         e.pos.lerpVectors(from, to, e.progress);
         e.group.position.set(e.pos.x, e.baseY, e.pos.z);
 
-        const dir = new THREE.Vector3().subVectors(to, from).normalize();
-        e.group.rotation.y = Math.atan2(dir.x, dir.z);
+        _scratchDir.subVectors(to, from).normalize();
+        e.group.rotation.y = Math.atan2(_scratchDir.x, _scratchDir.z);
 
         _applyWalkAnimation(e, speed, dt);
 

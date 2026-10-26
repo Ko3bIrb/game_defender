@@ -2,276 +2,807 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Защитник — Главное меню</title>
-    
-    <!-- Фавиконка -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a0505'/%3E%3Cstop offset='0.6' stop-color='%234a1005'/%3E%3Cstop offset='1' stop-color='%232a0500'/%3E%3C/linearGradient%3E%3ClinearGradient id='stone' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23a89880'/%3E%3Cstop offset='1' stop-color='%234a3a28'/%3E%3C/linearGradient%3E%3ClinearGradient id='fire' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffe066'/%3E%3Cstop offset='0.5' stop-color='%23ff6622'/%3E%3Cstop offset='1' stop-color='%23aa1100'/%3E%3C/linearGradient%3E%3CradialGradient id='glow' cx='0.5' cy='0.5' r='0.5'%3E%3Cstop offset='0' stop-color='%23ffaa22' stop-opacity='0.9'/%3E%3Cstop offset='1' stop-color='%23ff2200' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23sky)'/%3E%3Ccircle cx='32' cy='24' r='22' fill='url(%23glow)'/%3E%3Cpath d='M 14 58 L 14 30 L 18 30 L 18 26 L 22 26 L 22 30 L 26 30 L 26 24 L 30 24 L 30 30 L 34 30 L 34 24 L 38 24 L 38 30 L 42 30 L 42 26 L 46 26 L 46 30 L 50 30 L 50 58 Z' fill='url(%23stone)' stroke='%231a0a05' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='20' y='42' width='6' height='10' fill='%231a0505'/%3E%3Crect x='38' y='42' width='6' height='10' fill='%231a0505'/%3E%3Cpath d='M 30 44 L 34 44 L 33 52 L 31 52 Z' fill='%23ffaa22' opacity='0.85'/%3E%3Cpath d='M 32 8 C 28 14 26 18 27 22 C 28 24 30 22 30 20 C 31 23 33 23 34 21 C 35 19 34 16 33 14 C 35 15 36 18 35 21 C 37 20 38 16 36 12 C 35 10 34 9 32 8 Z' fill='url(%23fire)'/%3E%3Cpath d='M 32 14 C 30 17 30 19 31 20 C 32 20.5 32.5 19 32 18 C 32.6 18.6 33.2 19.4 32.8 20.6 C 33.5 19.8 33.6 18 32.6 16 Z' fill='%23fff2b0'/%3E%3C/svg%3E">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#02050a">
+    <title>Защитник</title>
 
-    <link rel="stylesheet" href="css/style.css">
-    
+    <!-- Фавиконка: меч на снегу -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2302050a'/%3E%3Cstop offset='1' stop-color='%230a1525'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23sky)'/%3E%3Ccircle cx='32' cy='22' r='14' fill='%23aaddff' opacity='0.5'/%3E%3Ccircle cx='32' cy='22' r='10' fill='%23ddeeff'/%3E%3Cpath d='M 30 50 L 34 50 L 33 30 L 42 30 L 42 26 L 33 26 L 33 20 L 31 20 L 31 26 L 22 26 L 22 30 L 31 30 Z' fill='%2388ccff' stroke='%230a1525' stroke-width='1.5'/%3E%3C/svg%3E">
+
     <style>
-        /* ─── БАЗОВЫЕ НАСТРОЙКИ ─── */
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #050208;
+        /* ═══════════════════════════════════════════
+           БАЗА
+           ═══════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: #02050a;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #cceeff;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* ─── СТАТИЧНЫЙ ФОН (КРЕПОСТЬ ПОД ФИОЛЕТОВОЙ БУРЕЙ) ─── */
-        .bg-container {
+        body {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        /* ═══════════════════════════════════════════
+           ФОН — НЕБО
+           ═══════════════════════════════════════════ */
+        .bg-sky {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 100% 60% at 50% 100%, rgba(30, 60, 100, 0.4) 0%, transparent 65%),
+                radial-gradient(ellipse 60% 40% at 50% 45%, rgba(100, 160, 220, 0.15) 0%, transparent 70%),
+                linear-gradient(180deg,
+                    #02050a 0%,
+                    #061020 25%,
+                    #0c1a2c 45%,
+                    #142a42 62%,
+                    #1e3a54 75%,
+                    #0a1525 100%);
+        }
+
+        /* ═══════════════════════════════════════════
+           ЗВЁЗДЫ (мерцающие точки)
+           ═══════════════════════════════════════════ */
+        .stars {
             position: fixed;
             inset: 0;
             z-index: 1;
-            /* Замените ссылку ниже на прямую ссылку на понравившееся изображение */
-            background-image: url('https://images.wallpaper.cam/2026/09/fortress-under-purple-storm-4k.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            pointer-events: none;
+            background-image:
+                radial-gradient(1.5px 1.5px at 12% 18%, #ddeeff 100%, transparent),
+                radial-gradient(1px 1px at 28% 8%, #aaddff 100%, transparent),
+                radial-gradient(2px 2px at 42% 22%, #ddeeff 100%, transparent),
+                radial-gradient(1px 1px at 58% 12%, #88ccff 100%, transparent),
+                radial-gradient(1.5px 1.5px at 72% 28%, #ddeeff 100%, transparent),
+                radial-gradient(1px 1px at 88% 6%, #aaddff 100%, transparent),
+                radial-gradient(1.5px 1.5px at 18% 32%, #88ccff 100%, transparent),
+                radial-gradient(1px 1px at 35% 5%, #ddeeff 100%, transparent),
+                radial-gradient(2px 2px at 65% 18%, #aaddff 100%, transparent),
+                radial-gradient(1px 1px at 82% 22%, #ddeeff 100%, transparent);
+            opacity: 0.7;
+            animation: stars-twinkle 4s ease-in-out infinite alternate;
         }
 
-        /* Затемняющий слой для читаемости текста и неонового свечения */
-        .bg-overlay {
-            position: absolute;
+        @keyframes stars-twinkle {
+            0% { opacity: 0.5; }
+            100% { opacity: 0.85; }
+        }
+
+        /* ═══════════════════════════════════════════
+           СЕВЕРНОЕ СИЯНИЕ (мягкое, плавает)
+           ═══════════════════════════════════════════ */
+        .aurora {
+            position: fixed;
             inset: 0;
-            background: radial-gradient(circle at center, rgba(20, 10, 35, 0.4) 0%, rgba(5, 2, 10, 0.85) 100%);
+            z-index: 2;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 120% 30% at 30% 35%, rgba(100, 200, 255, 0.18) 0%, transparent 55%),
+                radial-gradient(ellipse 100% 25% at 70% 45%, rgba(154, 100, 255, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 80% 20% at 50% 55%, rgba(100, 220, 200, 0.08) 0%, transparent 70%);
+            mix-blend-mode: screen;
+            animation: aurora-drift 22s ease-in-out infinite alternate;
         }
 
-        /* ─── UI МЕНЮ (Стекло + Неон) ─── */
-        .menu-container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            background: rgba(15, 7, 25, 0.7);
-            border: 2px solid rgba(154, 61, 255, 0.5);
-            border-radius: 24px;
-            padding: 50px 70px;
-            box-shadow: 0 0 60px rgba(154, 61, 255, 0.2), inset 0 0 30px rgba(154, 61, 255, 0.1);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            animation: menu-appear 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        @keyframes aurora-drift {
+            0%   { transform: translateX(-3%) scale(1.0); opacity: 0.85; }
+            50%  { transform: translateX(2%) scale(1.08); opacity: 1; }
+            100% { transform: translateX(5%) scale(1.05); opacity: 0.9; }
         }
+
+        /* ═══════════════════════════════════════════
+           ЛУНА
+           ═══════════════════════════════════════════ */
+        .moon {
+            position: fixed;
+            top: 34vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            z-index: 3;
+            background: radial-gradient(circle at 38% 38%,
+                #f0f8ff 0%,
+                #cce0f5 30%,
+                #88bbdd 65%,
+                #4466aa 100%);
+            box-shadow:
+                0 0 40px rgba(180, 220, 255, 0.55),
+                0 0 90px rgba(120, 190, 255, 0.35),
+                0 0 150px rgba(80, 150, 230, 0.2),
+                0 0 220px rgba(60, 120, 200, 0.1);
+            animation: moon-breathe 7s ease-in-out infinite;
+        }
+
+        @keyframes moon-breathe {
+            0%, 100% {
+                box-shadow:
+                    0 0 40px rgba(180, 220, 255, 0.55),
+                    0 0 90px rgba(120, 190, 255, 0.35),
+                    0 0 150px rgba(80, 150, 230, 0.2),
+                    0 0 220px rgba(60, 120, 200, 0.1);
+            }
+            50% {
+                box-shadow:
+                    0 0 55px rgba(180, 220, 255, 0.75),
+                    0 0 110px rgba(120, 190, 255, 0.45),
+                    0 0 180px rgba(80, 150, 230, 0.28),
+                    0 0 260px rgba(60, 120, 200, 0.15);
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           ГОРЫ НА ГОРИЗОНТЕ
+           ═══════════════════════════════════════════ */
+        .mountains {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 42vh;
+            z-index: 4;
+            pointer-events: none;
+            filter: drop-shadow(0 -2px 12px rgba(100, 180, 255, 0.12));
+        }
+
+        /* ═══════════════════════════════════════════
+           РЫЦАРЬ
+           ═══════════════════════════════════════════ */
+        .knight-wrap {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 66vh;
+            z-index: 5;
+            pointer-events: none;
+            filter: drop-shadow(0 0 24px rgba(100, 180, 255, 0.3));
+        }
+        .knight {
+            height: 100%;
+            width: auto;
+            display: block;
+        }
+
+        /* ═══════════════════════════════════════════
+           СНЕГ
+           ═══════════════════════════════════════════ */
+        .snow {
+            position: fixed;
+            inset: 0;
+            z-index: 6;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .snow span {
+            position: absolute;
+            top: -10px;
+            background: #e8f4ff;
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(180, 220, 255, 0.7);
+            animation: snow-fall linear infinite;
+            will-change: transform;
+        }
+        @keyframes snow-fall {
+            0%   { transform: translate3d(0, -10px, 0); }
+            100% { transform: translate3d(20px, 105vh, 0); }
+        }
+
+        /* ═══════════════════════════════════════════
+           ВИНЬЕТКА
+           ═══════════════════════════════════════════ */
+        .vignette {
+            position: fixed;
+            inset: 0;
+            z-index: 7;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center,
+                transparent 30%,
+                rgba(2, 5, 10, 0.4) 75%,
+                rgba(2, 5, 10, 0.85) 100%);
+        }
+
+        /* ═══════════════════════════════════════════
+           МЕНЮ
+           ═══════════════════════════════════════════ */
+        .menu-container {
+            position: fixed;
+            top: 8vh;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            text-align: center;
+            padding: 36px 32px;              /* ← было 38px 48px — уменьшили боковые */
+            width: min(480px, 92vw);         /* ← было 440px — чуть шире */
+            background: linear-gradient(180deg,
+                rgba(15, 25, 45, 0.7) 0%,
+                rgba(10, 20, 38, 0.75) 100%);
+            border: 1.5px solid rgba(140, 200, 255, 0.35);
+            border-radius: 20px;
+            box-shadow:
+                0 0 40px rgba(100, 180, 255, 0.15),
+                0 0 100px rgba(100, 180, 255, 0.08),
+                inset 0 0 30px rgba(140, 200, 255, 0.06);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            animation: menu-appear 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
 
         @keyframes menu-appear {
-            from { transform: translateY(40px) scale(0.9); opacity: 0; }
-            to { transform: translateY(0) scale(1); opacity: 1; }
+            from { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.95); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
         }
 
         .menu-title {
-            font-size: 64px;
+            font-size: clamp(30px, 5vw, 48px);        /* ← было 56px — уменьшили + clamp */
             font-weight: 900;
-            color: #fff;
-            letter-spacing: 8px;
+            color: #ffffff;
+            letter-spacing: clamp(3px, 0.8vw, 6px);   /* ← было 8px — уменьшили + clamp */
             text-transform: uppercase;
-            margin-bottom: 5px;
-            text-shadow: 
-                0 0 10px rgba(255,255,255,0.8),
-                0 0 20px #9a3dff,
-                0 0 40px #9a3dff,
-                0 0 80px #9a3dff;
-            animation: title-pulse 3s infinite alternate;
-        }
+            margin-bottom: 6px;
+            line-height: 1.05;
+            white-space: nowrap;                       /* ← гарантия, что не перенесётся */
+            text-shadow:
+                0 0 10px rgba(180, 220, 255, 0.9),
+                0 0 25px rgba(140, 200, 255, 0.7),
+                0 0 50px rgba(100, 180, 255, 0.5),
+                0 0 90px rgba(80, 150, 230, 0.3);
+            animation: title-pulse 4s ease-in-out infinite alternate;
+}
 
         @keyframes title-pulse {
-            0% { text-shadow: 0 0 10px #fff, 0 0 20px #9a3dff, 0 0 40px #9a3dff; }
-            100% { text-shadow: 0 0 15px #fff, 0 0 30px #00c8ff, 0 0 60px #00c8ff; }
+            0%   { text-shadow:
+                0 0 10px rgba(180, 220, 255, 0.9),
+                0 0 25px rgba(140, 200, 255, 0.7),
+                0 0 50px rgba(100, 180, 255, 0.5); }
+            100% { text-shadow:
+                0 0 15px rgba(200, 240, 255, 1),
+                0 0 35px rgba(160, 220, 255, 0.85),
+                0 0 65px rgba(120, 200, 255, 0.6),
+                0 0 110px rgba(100, 180, 240, 0.4); }
         }
 
         .menu-subtitle {
-            font-size: 14px;
-            color: #00c8ff;
-            letter-spacing: 6px;
-            margin-bottom: 50px;
+            font-size: 12px;
+            color: #88ccff;
+            letter-spacing: 5px;
+            margin-bottom: 32px;
             text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+            text-shadow: 0 0 10px rgba(140, 200, 255, 0.6);
+            opacity: 0.85;
         }
 
         .menu-btn {
             display: block;
-            width: 320px;
-            padding: 18px 20px;
-            margin: 0 auto 20px auto;
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid #9a3dff;
+            width: 100%;
+            padding: 15px 20px;
+            margin: 0 auto 12px auto;
+            background: rgba(10, 20, 40, 0.6);
+            border: 1.5px solid rgba(140, 200, 255, 0.45);
             border-radius: 12px;
-            color: #e8d4ff;
-            font-size: 18px;
-            font-weight: 800;
+            color: #cceeff;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 3px;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(154, 61, 255, 0.2);
+            transition: all 0.25s ease;
+            box-shadow:
+                0 0 15px rgba(140, 200, 255, 0.15),
+                inset 0 0 10px rgba(140, 200, 255, 0.05);
             position: relative;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .menu-btn::before {
             content: '';
             position: absolute;
-            top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(154, 61, 255, 0.4), transparent);
-            transition: left 0.5s;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(180, 220, 255, 0.3),
+                transparent);
+            transition: left 0.6s ease;
         }
 
         .menu-btn:hover {
-            background: rgba(154, 61, 255, 0.15);
-            box-shadow: 0 0 30px rgba(154, 61, 255, 0.6);
-            border-color: #00c8ff;
-            color: #fff;
-            transform: scale(1.05);
+            background: rgba(140, 200, 255, 0.12);
+            border-color: rgba(180, 220, 255, 0.9);
+            color: #ffffff;
+            box-shadow:
+                0 0 25px rgba(140, 200, 255, 0.5),
+                inset 0 0 15px rgba(140, 200, 255, 0.1);
+            transform: translateY(-1px);
         }
 
         .menu-btn:hover::before {
             left: 100%;
         }
 
+        .menu-btn:active {
+            transform: translateY(0);
+        }
+
         .menu-btn.play-btn {
-            border-color: #39ff5a;
-            color: #39ff5a;
-            box-shadow: 0 0 20px rgba(57, 255, 90, 0.3);
-            font-size: 22px;
-            padding: 22px 20px;
-            margin-bottom: 25px;
+            padding: 18px 20px;
+            font-size: 17px;
+            letter-spacing: 4px;
+            border-color: rgba(160, 220, 255, 0.7);
+            background: linear-gradient(180deg,
+                rgba(60, 120, 180, 0.35) 0%,
+                rgba(30, 70, 120, 0.35) 100%);
+            color: #ffffff;
+            box-shadow:
+                0 0 25px rgba(140, 200, 255, 0.35),
+                inset 0 0 15px rgba(180, 220, 255, 0.1);
+            margin-bottom: 16px;
         }
 
         .menu-btn.play-btn:hover {
-            background: rgba(57, 255, 90, 0.15);
-            box-shadow: 0 0 40px rgba(57, 255, 90, 0.8);
-            border-color: #fff;
-            color: #fff;
+            background: linear-gradient(180deg,
+                rgba(90, 160, 220, 0.45) 0%,
+                rgba(50, 100, 160, 0.45) 100%);
+            box-shadow:
+                0 0 40px rgba(160, 220, 255, 0.6),
+                inset 0 0 20px rgba(180, 220, 255, 0.15);
         }
 
-        /* ─── МОДАЛКА ВЫБОРА КАРТЫ ─── */
+        /* ═══════════════════════════════════════════
+           МОДАЛКА ВЫБОРА КАРТЫ
+           ═══════════════════════════════════════════ */
         #menu-maps-modal {
             position: fixed;
             inset: 0;
-            background: rgba(5, 2, 10, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            padding: 16px;
+            background: rgba(2, 5, 10, 0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
         }
+
         #menu-maps-modal.active {
             opacity: 1;
             pointer-events: auto;
         }
 
         .menu-maps-box {
-            background: rgba(20, 10, 35, 0.95);
-            border: 2px solid #9a3dff;
+            width: 100%;
+            max-width: 760px;
+            max-height: calc(100dvh - 32px);
+            overflow-y: auto;
+            padding: 36px;
             border-radius: 20px;
-            padding: 40px;
-            width: 90vw;
-            max-width: 800px;
-            box-shadow: 0 0 80px rgba(154, 61, 255, 0.3);
-            transform: translateY(20px);
-            transition: transform 0.3s;
+            background: linear-gradient(180deg,
+                rgba(15, 25, 45, 0.97) 0%,
+                rgba(8, 15, 30, 0.97) 100%);
+            border: 1.5px solid rgba(140, 200, 255, 0.4);
+            box-shadow:
+                0 0 60px rgba(100, 180, 255, 0.2),
+                0 0 120px rgba(100, 180, 255, 0.08);
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
         }
+
         #menu-maps-modal.active .menu-maps-box {
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+        }
+
+        .maps-modal-title {
+            font-size: 26px;
+            color: #88ccff;
+            text-align: center;
+            margin-bottom: 24px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(140, 200, 255, 0.6);
+            font-weight: 800;
         }
 
         .menu-maps-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 30px;
+            gap: 18px;
+            margin-bottom: 24px;
         }
 
         .menu-map-card {
-            background: rgba(10, 5, 15, 0.8);
-            border: 2px solid rgba(154, 61, 255, 0.3);
-            border-radius: 16px;
-            padding: 30px 20px;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 24px 18px;
+            border-radius: 14px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            background: rgba(8, 15, 30, 0.8);
+            border: 1.5px solid rgba(140, 200, 255, 0.25);
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .menu-map-card:hover { transform: translateY(-5px); }
+        .menu-map-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg,
+                transparent 40%,
+                rgba(140, 200, 255, 0.05) 50%,
+                transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
 
-        #card-hell:hover { border-color: #ff3b3b; box-shadow: 0 0 30px rgba(255, 59, 59, 0.4); }
-        #card-hell.selected { border-color: #ff3b3b; box-shadow: 0 0 30px rgba(255, 59, 59, 0.6), inset 0 0 20px rgba(255, 59, 59, 0.2); }
-        
-        #card-ice:hover { border-color: #00c8ff; box-shadow: 0 0 30px rgba(0, 200, 255, 0.4); }
-        #card-ice.selected { border-color: #00c8ff; box-shadow: 0 0 30px rgba(0, 200, 255, 0.6), inset 0 0 20px rgba(0, 200, 255, 0.2); }
+        .menu-map-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .menu-map-card:hover::before {
+            opacity: 1;
+        }
+
+        #card-hell:hover {
+            border-color: rgba(255, 130, 80, 0.8);
+            box-shadow:
+                0 0 25px rgba(255, 130, 80, 0.3),
+                inset 0 0 20px rgba(255, 130, 80, 0.08);
+        }
+        #card-hell.selected {
+            border-color: rgba(255, 130, 80, 0.95);
+            box-shadow:
+                0 0 30px rgba(255, 130, 80, 0.5),
+                inset 0 0 25px rgba(255, 130, 80, 0.12);
+        }
+
+        #card-ice:hover {
+            border-color: rgba(140, 200, 255, 0.9);
+            box-shadow:
+                0 0 25px rgba(140, 200, 255, 0.4),
+                inset 0 0 20px rgba(140, 200, 255, 0.1);
+        }
+        #card-ice.selected {
+            border-color: rgba(160, 220, 255, 1);
+            box-shadow:
+                0 0 30px rgba(160, 220, 255, 0.6),
+                inset 0 0 25px rgba(160, 220, 255, 0.15);
+        }
 
         .menu-map-card.selected::after {
             content: '✓ ВЫБРАНО';
             position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 12px;
+            top: 12px;
+            right: 12px;
+            font-size: 10px;
             font-weight: 900;
-            color: #fff;
-            background: rgba(255,255,255,0.2);
-            padding: 4px 8px;
-            border-radius: 6px;
+            color: #ffffff;
+            background: rgba(140, 200, 255, 0.3);
+            padding: 3px 7px;
+            border-radius: 5px;
             letter-spacing: 1px;
+            border: 1px solid rgba(180, 220, 255, 0.5);
         }
 
-        .menu-map-icon { font-size: 54px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3)); }
-        .menu-map-name { font-size: 22px; font-weight: 800; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px; }
-        .menu-map-desc { font-size: 13px; color: rgba(232, 212, 255, 0.7); line-height: 1.4; }
+        .menu-map-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 0 15px rgba(180, 220, 255, 0.5));
+        }
+        .menu-map-name {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 10px rgba(140, 200, 255, 0.5);
+        }
+        .menu-map-desc {
+            font-size: 12px;
+            color: rgba(200, 225, 255, 0.7);
+            line-height: 1.4;
+        }
 
         .menu-close-btn {
+            display: block;
             width: 100%;
-            padding: 15px;
+            padding: 13px;
             background: transparent;
-            border: 2px solid rgba(232, 212, 255, 0.4);
+            border: 1.5px solid rgba(200, 225, 255, 0.35);
             border-radius: 10px;
-            color: rgba(232, 212, 255, 0.8);
+            color: rgba(200, 225, 255, 0.8);
+            font-family: inherit;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
             letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
         .menu-close-btn:hover {
-            background: rgba(232, 212, 255, 0.1);
-            border-color: #fff;
-            color: #fff;
+            background: rgba(200, 225, 255, 0.08);
+            border-color: rgba(200, 225, 255, 0.9);
+            color: #ffffff;
+        }
+
+        /* ═══════════════════════════════════════════
+           МОБИЛЬНАЯ АДАПТАЦИЯ
+           ═══════════════════════════════════════════ */
+        @media (max-width: 900px) {
+            .moon {
+                top: 30vh;
+                width: 90px;
+                height: 90px;
+            }
+            .mountains {
+                height: 38vh;
+            }
+            .knight-wrap {
+                height: 52vh;
+                opacity: 0.85;
+            }
+            .menu-container {
+                top: 6vh;
+                padding: 26px 22px;
+                width: min(400px, 94vw);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .menu-title {
+                font-size: clamp(32px, 9vw, 44px);
+                letter-spacing: clamp(3px, 1.5vw, 6px);
+                margin-bottom: 4px;
+            }
+            .menu-subtitle {
+                font-size: 10px;
+                letter-spacing: 3px;
+                margin-bottom: 22px;
+            }
+            .menu-btn {
+                padding: 13px 16px;
+                font-size: 13px;
+                letter-spacing: 2px;
+                margin-bottom: 10px;
+                min-height: 48px;
+            }
+            .menu-btn.play-btn {
+                padding: 15px 16px;
+                font-size: 15px;
+                letter-spacing: 3px;
+                min-height: 52px;
+                margin-bottom: 12px;
+            }
+
+            .menu-maps-box {
+                padding: 22px 18px;
+            }
+            .maps-modal-title {
+                font-size: 20px;
+                margin-bottom: 18px;
+                letter-spacing: 2px;
+            }
+            .menu-maps-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+            .menu-map-card {
+                padding: 18px 14px;
+            }
+            .menu-map-icon { font-size: 38px; margin-bottom: 8px; }
+            .menu-map-name { font-size: 15px; }
+            .menu-map-desc { font-size: 11px; }
+            .menu-close-btn { padding: 12px; font-size: 12px; min-height: 44px; }
+        }
+
+        /* Телефон в ландшафте / очень низкий экран */
+        @media (max-height: 550px) {
+            .moon {
+                top: 20vh;
+                width: 70px;
+                height: 70px;
+            }
+            .mountains {
+                height: 45vh;
+            }
+            .knight-wrap {
+                height: 70vh;
+            }
+            .menu-container {
+                top: 4vh;
+                padding: 14px 20px;
+                width: min(460px, 88vw);
+            }
+            .menu-title {
+                font-size: clamp(22px, 4.5vw, 32px);
+                letter-spacing: 3px;
+                margin-bottom: 2px;
+            }
+            .menu-subtitle {
+                font-size: 9px;
+                letter-spacing: 3px;
+                margin-bottom: 12px;
+            }
+            .menu-btn {
+                padding: 9px 14px;
+                font-size: 11px;
+                margin-bottom: 6px;
+                letter-spacing: 2px;
+                min-height: 38px;
+            }
+            .menu-btn.play-btn {
+                padding: 10px 14px;
+                font-size: 13px;
+                min-height: 42px;
+                margin-bottom: 8px;
+            }
+            .menu-maps-box {
+                padding: 14px 16px;
+                max-height: calc(100dvh - 16px);
+            }
+            .maps-modal-title { font-size: 16px; margin-bottom: 12px; }
+            .menu-maps-grid { gap: 8px; margin-bottom: 12px; }
+            .menu-map-card { padding: 12px 10px; }
+            .menu-map-icon { font-size: 28px; margin-bottom: 4px; }
+            .menu-map-name { font-size: 12px; }
+            .menu-map-desc { font-size: 10px; }
+            .menu-close-btn { padding: 8px; font-size: 11px; min-height: 36px; }
+        }
+
+        /* Планшет в портрете */
+        @media (min-width: 601px) and (max-width: 900px) {
+            .menu-maps-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Фон с крепостью -->
-    <div class="bg-container">
-        <div class="bg-overlay"></div>
+    <!-- ═══ ФОН: небо, звёзды, сияние, луна ═══ -->
+    <div class="bg-sky"></div>
+    <div class="stars"></div>
+    <div class="aurora"></div>
+    <div class="moon"></div>
+
+    <!-- ═══ Горы на горизонте ═══ -->
+    <svg class="mountains" viewBox="0 0 1600 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 0 400 L 80 300 L 160 340 L 260 220 L 360 290 L 460 180 L 580 260 L 700 150 L 820 240 L 940 130 L 1060 220 L 1180 160 L 1300 260 L 1420 200 L 1520 280 L 1600 240 L 1600 400 Z"
+              fill="#0a1525" opacity="0.95"/>
+        <path d="M 0 400 L 120 340 L 240 370 L 380 290 L 520 340 L 660 270 L 800 320 L 940 250 L 1080 300 L 1220 240 L 1360 310 L 1500 260 L 1600 320 L 1600 400 Z"
+              fill="#02050a" opacity="0.9"/>
+    </svg>
+
+    <!-- ═══ Рыцарь ═══ -->
+    <div class="knight-wrap">
+        <svg class="knight" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="kbody" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#0e1a2a"/>
+                    <stop offset="1" stop-color="#000205"/>
+                </linearGradient>
+                <linearGradient id="krim" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#88ccff" stop-opacity="0.5"/>
+                    <stop offset="1" stop-color="#88ccff" stop-opacity="0"/>
+                </linearGradient>
+                <filter id="kglow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="1.5"/>
+                </filter>
+                <filter id="kglow2" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation="4"/>
+                </filter>
+            </defs>
+
+            <!-- Плащ (за спиной) -->
+            <path d="M 140 210 Q 55 330 50 480 Q 45 560 85 592 L 315 592 Q 355 560 350 480 Q 345 330 260 210 Z"
+                  fill="url(#kbody)" opacity="0.85"/>
+
+            <!-- Ноги -->
+            <path d="M 158 400 L 152 535 Q 155 558 178 558 L 180 535 L 180 400 Z" fill="#000205"/>
+            <path d="M 220 400 L 220 535 L 222 558 L 245 558 Q 248 535 242 535 L 242 400 Z" fill="#000205"/>
+
+            <!-- Корпус -->
+            <path d="M 148 185 Q 140 260 145 400 L 255 400 Q 260 260 252 185 Z" fill="url(#kbody)"/>
+
+            <!-- Акцент на груди -->
+            <path d="M 165 220 Q 200 205 235 220 L 240 320 Q 200 340 160 320 Z"
+                  fill="none" stroke="#44aaff" stroke-width="1" opacity="0.3"/>
+
+            <!-- Наплечники -->
+            <path d="M 148 190 Q 115 175 105 210 Q 115 240 150 225 Z"
+                  fill="#0e1a2a" stroke="#88ccff" stroke-width="0.5" stroke-opacity="0.5"/>
+            <path d="M 252 190 Q 285 175 295 210 Q 285 240 250 225 Z"
+                  fill="#0e1a2a" stroke="#88ccff" stroke-width="0.5" stroke-opacity="0.5"/>
+
+            <!-- Руки -->
+            <path d="M 128 215 Q 113 280 118 340 L 138 355 L 143 340 L 143 230 Z" fill="url(#kbody)"/>
+            <path d="M 272 215 Q 287 280 282 340 L 262 355 L 257 340 L 257 230 Z" fill="url(#kbody)"/>
+
+            <!-- Рукоять меча (держится у груди) -->
+            <rect x="195" y="290" width="10" height="70" rx="2"
+                  fill="#0e1a2a" stroke="#88ccff" stroke-width="0.3" stroke-opacity="0.5"/>
+
+            <!-- Гарда меча -->
+            <rect x="170" y="355" width="60" height="10" rx="3"
+                  fill="#0e1a2a" stroke="#88ccff" stroke-width="0.5" stroke-opacity="0.6"/>
+
+            <!-- Клинок -->
+            <path d="M 195 365 L 205 365 L 205 520 Q 200 545 195 520 Z" fill="#0e1a2a"/>
+            <!-- Свечение клинка -->
+            <line x1="200" y1="365" x2="200" y2="525"
+                  stroke="#88ccff" stroke-width="1.5" opacity="0.6" filter="url(#kglow)"/>
+
+            <!-- Шлем -->
+            <path d="M 175 100 Q 175 60 200 60 Q 225 60 225 100 L 230 175 Q 200 190 170 175 Z"
+                  fill="url(#kbody)"/>
+            <!-- Гребень шлема -->
+            <path d="M 200 60 Q 205 35 215 25 Q 208 48 200 60" fill="#0e1a2a"/>
+            <path d="M 200 60 Q 195 35 185 25 Q 192 48 200 60" fill="#0e1a2a"/>
+            <!-- Самоцвет на гребне -->
+            <circle cx="200" cy="55" r="3" fill="#aaddff" opacity="0.9" filter="url(#kglow)"/>
+
+            <!-- Прорезь шлема — светится -->
+            <rect x="176" y="115" width="48" height="6" rx="2"
+                  fill="#88ccff" opacity="0.95" filter="url(#kglow)"/>
+            <rect x="176" y="115" width="48" height="6" rx="2"
+                  fill="#ffffff" opacity="0.5"/>
+            <!-- Ореол свечения прорези -->
+            <ellipse cx="200" cy="118" rx="52" ry="22"
+                     fill="#88ccff" opacity="0.15" filter="url(#kglow2)"/>
+
+            <!-- Снег на плечах -->
+            <ellipse cx="125" cy="200" rx="18" ry="3" fill="#ddeeff" opacity="0.5"/>
+            <ellipse cx="275" cy="200" rx="18" ry="3" fill="#ddeeff" opacity="0.5"/>
+            <ellipse cx="180" cy="65" rx="18" ry="2.5" fill="#ddeeff" opacity="0.4"/>
+            <ellipse cx="220" cy="65" rx="18" ry="2.5" fill="#ddeeff" opacity="0.4"/>
+
+            <!-- Тень/снег под ногами -->
+            <ellipse cx="200" cy="568" rx="105" ry="18" fill="#0a1520" opacity="0.7"/>
+            <ellipse cx="200" cy="562" rx="115" ry="10" fill="#1a2a3a" opacity="0.5"/>
+        </svg>
     </div>
 
-    <!-- Основное меню -->
+    <!-- ═══ Снегопад ═══ -->
+    <div class="snow" id="snow"></div>
+
+    <!-- ═══ Виньетка ═══ -->
+    <div class="vignette"></div>
+
+    <!-- ═══ МЕНЮ ═══ -->
     <div class="menu-container">
         <div class="menu-title">Защитник</div>
-        <div class="menu-subtitle">Оборона последнего рубежа</div>
+        <div class="menu-subtitle">Одинокий воин на страже</div>
 
-        <button class="menu-btn play-btn" onclick="startGame()">▶ Играть</button>
+        <button class="menu-btn play-btn" onclick="startGame()">▶ Начать оборону</button>
         <button class="menu-btn" onclick="openMapsModal()">🗺️ Выбрать карту</button>
     </div>
 
-    <!-- Модалка выбора карты -->
+    <!-- ═══ МОДАЛКА ВЫБОРА КАРТЫ ═══ -->
     <div id="menu-maps-modal">
         <div class="menu-maps-box">
-            <h2 style="color: var(--gold); text-align: center; margin-top: 0; margin-bottom: 30px; font-size: 28px; letter-spacing: 3px; text-transform: uppercase;">Выбери карту</h2>
+            <div class="maps-modal-title">Выбери карту</div>
             <div class="menu-maps-grid">
-                
+
                 <div class="menu-map-card" id="card-hell" onclick="selectMap('hell')">
                     <div class="menu-map-icon">🔥</div>
                     <div class="menu-map-name">Последний Бастион</div>
@@ -290,10 +821,14 @@
     </div>
 
     <script>
+        /* ═══════════════════════════════════════════
+           ВЫБОР КАРТЫ (логика без изменений)
+           ═══════════════════════════════════════════ */
         let selectedMap = localStorage.getItem('selected_map') || 'hell';
 
         document.addEventListener('DOMContentLoaded', () => {
             updateCardHighlight();
+            createSnow();
         });
 
         function openMapsModal() {
@@ -323,6 +858,39 @@
                 window.location.href = 'html/game/game-hell.html';
             }
         }
+
+        /* ═══════════════════════════════════════════
+           ГЕНЕРАЦИЯ СНЕГА
+           Меньше частиц на мобиле — производительность.
+           ═══════════════════════════════════════════ */
+        function createSnow() {
+            const container = document.getElementById('snow');
+            const isMobile = window.innerWidth < 900;
+            const count = isMobile ? 28 : 45;
+
+            for (let i = 0; i < count; i++) {
+                const flake = document.createElement('span');
+                flake.style.left = Math.random() * 100 + '%';
+                flake.style.animationDelay = (Math.random() * 12) + 's';
+                flake.style.animationDuration = (9 + Math.random() * 12) + 's';
+                flake.style.opacity = (0.3 + Math.random() * 0.5).toFixed(2);
+                const size = (1.5 + Math.random() * 2.5).toFixed(1) + 'px';
+                flake.style.width = size;
+                flake.style.height = size;
+                container.appendChild(flake);
+            }
+        }
+
+        /* Пересоздать снег при ресайзе (смена mobile/desktop) */
+        let _lastMobile = window.innerWidth < 900;
+        window.addEventListener('resize', () => {
+            const nowMobile = window.innerWidth < 900;
+            if (nowMobile !== _lastMobile) {
+                _lastMobile = nowMobile;
+                document.getElementById('snow').innerHTML = '';
+                createSnow();
+            }
+        });
     </script>
 </body>
 </html>

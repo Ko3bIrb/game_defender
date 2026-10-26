@@ -30,6 +30,7 @@ const GROUP_EXTRA_GAP = 1.5;
 
 let waveQueue = [];
 let waveSpawnIndex = 0;
+let _lastSpawnedType = null;
 
 function generateWaveQueue(n) {
     const wave = WAVES_TABLE[n - 1];
@@ -56,6 +57,7 @@ function startWave() {
     GameState.waveLeaked = 0;
     waveQueue = generateWaveQueue(GameState.wave);
     waveSpawnIndex = 0;
+    _lastSpawnedType = null;
     SFX.waveStart();
     onStateChanged();
 }
@@ -89,6 +91,22 @@ function updateWave(dt) {
         const item = waveQueue[waveSpawnIndex];
         try {
             spawnEnemy(item.type, item.hp);
+
+            // ─── Рык монстра при спавне ───
+            // 1) Первый монстр каждой группы — ВСЕГДА ревёт (это «выход из базы»)
+            // 2) Босс — ВСЕГДА громко
+            // 3) Остальные — 35% шанс
+            if (typeof SFX !== 'undefined' && SFX.monsterGrowl) {
+                const data = ENEMIES_DATA[item.type];
+                const isGroupStart = item.type !== _lastSpawnedType;
+                _lastSpawnedType = item.type;
+
+                if (data && data.isBoss) {
+                    SFX.monsterGrowl(2.0, 'boss');
+                } else if (isGroupStart || Math.random() < 0.35) {
+                    SFX.monsterGrowl((data && data.size) || 1, 'far');
+                }
+            }
         } catch (err) {
             console.error('[updateWave] Ошибка спавна', item.type, ':', err);
         }
