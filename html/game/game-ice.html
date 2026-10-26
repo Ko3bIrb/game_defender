@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#02050a">
+    <title>Защитник — Лёд</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23021020'/%3E%3Cstop offset='0.6' stop-color='%23103050'/%3E%3Cstop offset='1' stop-color='%23051020'/%3E%3C/linearGradient%3E%3ClinearGradient id='ice' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23cceeff'/%3E%3Cstop offset='1' stop-color='%234488aa'/%3E%3C/linearGradient%3E%3CradialGradient id='glow' cx='0.5' cy='0.5' r='0.5'%3E%3Cstop offset='0' stop-color='%23aaddff' stop-opacity='0.9'/%3E%3Cstop offset='1' stop-color='%23004488' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23sky)'/%3E%3Ccircle cx='32' cy='24' r='22' fill='url(%23glow)'/%3E%3Cpath d='M 32 8 L 36 24 L 50 20 L 40 32 L 52 42 L 36 38 L 32 54 L 28 38 L 12 42 L 24 32 L 14 20 L 28 24 Z' fill='url(%23ice)' stroke='%230a1a2a' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="../../css/Ice/style-ice.css">
+
+    <style>
+        #rotate-notice {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: radial-gradient(ellipse at center, #0a1525 0%, #02050a 100%);
+            color: #cceeff;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            user-select: none;
+        }
+        #rotate-notice .rotate-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            animation: rotate-hint 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(100, 180, 255, 0.8));
+        }
+        #rotate-notice .rotate-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            color: #88ccff;
+            text-shadow: 0 0 15px rgba(136, 204, 255, 0.6);
+        }
+        #rotate-notice .rotate-sub {
+            font-size: 14px;
+            opacity: 0.75;
+            max-width: 320px;
+            line-height: 1.5;
+        }
+        @keyframes rotate-hint {
+            0%, 100% { transform: rotate(0deg); }
+            40%, 60% { transform: rotate(90deg); }
+        }
+        @media (orientation: portrait) and (hover: none) {
+            #rotate-notice { display: flex; }
+        }
+
+        @media (hover: none), (max-width: 1400px) {
+            #hud {
+                flex-wrap: nowrap !important;
+                row-gap: 0;
+                column-gap: 2px !important;
+                align-items: center;
+                top: 4px !important;
+                left: 4px !important;
+                right: 4px !important;
+                width: auto !important;
+            }
+
+            /* Инфо-элементы НЕ СЖИМАЮТСЯ */
+            .hud-item {
+                order: 0 !important;
+                flex: 0 0 auto !important;
+                flex-shrink: 0 !important;
+                flex-grow: 0 !important;
+                flex-basis: auto !important;
+                min-width: max-content !important;
+                overflow: visible !important;
+                font-size: clamp(6px, 1.2vw, 12px) !important;
+                padding: clamp(1px, 0.4vw, 6px) clamp(2px, 0.6vw, 8px) !important;
+                gap: clamp(1px, 0.3vw, 4px) !important;
+                border-radius: 5px !important;
+                white-space: nowrap;
+            }
+            .hud-icon { font-size: clamp(6px, 1.2vw, 12px) !important; }
+
+            /* Центральные кнопки сжимаются */
+            .hud-center-group {
+                order: 1 !important;
+                position: static !important;
+                left: auto !important;
+                transform: none !important;
+                margin: 0 !important;
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                flex: 0 1 auto !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+                gap: clamp(1px, 0.3vw, 4px) !important;
+            }
+            .hud-center-group .hud-btn {
+                flex: 0 1 auto !important;
+                min-width: 0 !important;
+                font-size: clamp(6px, 1.2vw, 12px) !important;
+                padding: clamp(1px, 0.4vw, 6px) clamp(2px, 0.6vw, 8px) !important;
+                border-radius: 5px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Speed-group — справа, не сжимается */
+            .hud-speed-group {
+                order: 999 !important;
+                margin-left: auto !important;
+                margin-right: 0 !important;
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                flex: 0 0 auto !important;
+                flex-shrink: 0 !important;
+                gap: clamp(1px, 0.3vw, 4px) !important;
+            }
+            .hud-speed-group .hud-btn {
+                flex: 0 0 auto !important;
+                font-size: clamp(6px, 1.2vw, 12px) !important;
+                padding: clamp(1px, 0.4vw, 6px) clamp(2px, 0.6vw, 8px) !important;
+                border-radius: 5px !important;
+                white-space: nowrap;
+                min-width: 0 !important;
+            }
+            #hud-pause,
+            #hud-audio,
+            #hud-difficulty {
+                min-width: 0 !important;
+            }
+
+            .shop-card { min-width: 66px !important; padding: 4px 5px !important; border-radius: 6px !important; }
+            .shop-icon { width: 28px !important; height: 28px !important; margin-bottom: 1px !important; }
+            .shop-name { font-size: 9px !important; margin-bottom: 1px !important; }
+            .shop-cost { font-size: 9px !important; margin-bottom: 2px !important; }
+            .shop-stats { font-size: 7px !important; line-height: 1.15 !important; }
+            #shop { gap: 5px !important; }
+
+            #tower-panel {
+                top: 80px !important;
+                bottom: auto !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 240px !important;
+                padding: 10px !important;
+                font-size: 11px !important;
+                max-height: calc(100vh - 200px) !important;
+                overflow-y: auto;
+            }
+            .tp-title { font-size: 13px !important; }
+            .tp-stars { font-size: 12px !important; letter-spacing: 1px !important; margin-bottom: 4px !important; }
+            .tp-stats { font-size: 11px !important; line-height: 1.3 !important; margin-bottom: 6px !important; }
+            .tp-btn { font-size: 11px !important; padding: 6px !important; }
+
+            .maps-box { padding: 16px 18px !important; max-height: 94vh !important; width: 94vw !important; }
+            .maps-title { font-size: 20px !important; letter-spacing: 2px !important; }
+            .maps-subtitle { font-size: 11px !important; margin-bottom: 12px !important; }
+            .maps-list { grid-template-columns: 1fr !important; gap: 8px !important; max-height: 60vh !important; }
+            .map-card { padding: 10px !important; border-radius: 8px !important; }
+            .map-icon { font-size: 28px !important; margin-bottom: 4px !important; }
+            .map-name { font-size: 14px !important; letter-spacing: 1px !important; margin-bottom: 2px !important; }
+            .map-diff { font-size: 10px !important; margin-bottom: 4px !important; }
+            .map-desc { font-size: 10px !important; line-height: 1.3 !important; }
+            .map-card.current::after { font-size: 9px !important; top: 6px; right: 8px; }
+            #maps-close { padding: 7px 22px !important; font-size: 12px !important; }
+
+            .difficulty-box { padding: 16px 18px !important; width: 94vw !important; max-height: 94vh !important; }
+            .difficulty-title { font-size: 20px !important; letter-spacing: 2px !important; }
+            .difficulty-subtitle { font-size: 11px !important; margin-bottom: 12px !important; }
+            .difficulty-options { grid-template-columns: 1fr !important; gap: 8px !important; }
+            .difficulty-card { padding: 10px !important; }
+            .diff-icon { font-size: 28px !important; margin-bottom: 4px !important; }
+            .diff-name { font-size: 14px !important; letter-spacing: 1px !important; }
+            .diff-desc { font-size: 10px !important; margin-bottom: 8px !important; }
+            .diff-stats { font-size: 10px !important; line-height: 1.4 !important; }
+            .diff-stats li { padding-left: 12px !important; }
+            .diff-stats li::before { left: 4px !important; }
+            #difficulty-cancel { padding: 7px 22px !important; font-size: 12px !important; }
+
+            .rules-box { padding: 16px 18px !important; width: 94vw !important; max-height: 94vh !important; }
+            .rules-box h2 { font-size: 20px !important; letter-spacing: 2px !important; }
+            .rules-content { font-size: 12px !important; }
+            .rules-content h3 { font-size: 14px !important; margin: 12px 0 6px !important; }
+            #rules-towers-list { grid-template-columns: 1fr !important; gap: 8px !important; }
+            .rule-tower-card { padding: 8px !important; }
+            .rtc-header { font-size: 13px !important; gap: 6px !important; }
+            .rtc-header img { width: 24px !important; height: 24px !important; }
+            .rtc-cost, .rtc-role, .rtc-desc, .rtc-section > div { font-size: 10px !important; }
+            #rules-close { padding: 7px 30px !important; font-size: 13px !important; }
+
+            .end-box { padding: 20px 24px !important; min-width: 240px !important; }
+            #end-title { font-size: 22px !important; letter-spacing: 2px !important; margin-bottom: 10px !important; }
+            #end-stars { font-size: 24px !important; letter-spacing: 4px !important; margin-bottom: 10px !important; }
+            #end-info { font-size: 12px !important; margin-bottom: 14px !important; }
+            #end-restart { font-size: 13px !important; padding: 8px 24px !important; }
+        }
+
+        @media (max-height: 500px) {
+            #hud {
+                column-gap: 1px !important;
+                top: 3px !important;
+                left: 3px !important;
+                right: 3px !important;
+            }
+            .hud-item {
+                font-size: clamp(6px, 1.1vw, 9px) !important;
+                padding: 1px 3px !important;
+                gap: 1px !important;
+            }
+            .hud-icon { font-size: clamp(6px, 1.1vw, 9px) !important; }
+            .hud-center-group { gap: 1px !important; }
+            .hud-center-group .hud-btn {
+                font-size: clamp(6px, 1.1vw, 9px) !important;
+                padding: 1px 3px !important;
+            }
+            .hud-speed-group { gap: 1px !important; }
+            .hud-speed-group .hud-btn {
+                font-size: clamp(6px, 1.1vw, 9px) !important;
+                padding: 1px 3px !important;
+            }
+
+            #shop {
+                bottom: 3px !important;
+                gap: 3px !important;
+                padding: 0 4px 2px 4px !important;
+            }
+            .shop-card { min-width: 52px !important; padding: 2px 3px !important; }
+            .shop-icon { width: 22px !important; height: 22px !important; }
+            .shop-name { font-size: 8px !important; }
+            .shop-cost { font-size: 8px !important; margin-bottom: 0 !important; }
+            .shop-stats { display: none !important; }
+
+            #tower-panel {
+                top: 70px !important;
+                bottom: auto !important;
+                width: 200px !important;
+                padding: 7px !important;
+                font-size: 10px !important;
+                max-height: calc(100vh - 140px) !important;
+            }
+            .tp-title { font-size: 11px !important; }
+            .tp-stars { font-size: 10px !important; margin-bottom: 3px !important; letter-spacing: 1px !important; }
+            .tp-stats { font-size: 10px !important; line-height: 1.25 !important; margin-bottom: 5px !important; }
+            .tp-btn { font-size: 10px !important; padding: 4px !important; margin-bottom: 3px !important; }
+
+            .difficulty-box, .maps-box, .rules-box {
+                padding: 12px 14px !important;
+                max-height: 94vh !important;
+                width: 96vw !important;
+            }
+            .difficulty-title, .maps-title, .rules-box h2 {
+                font-size: 16px !important;
+                margin-bottom: 4px !important;
+                letter-spacing: 1px !important;
+            }
+            .difficulty-subtitle, .maps-subtitle { font-size: 10px !important; margin-bottom: 10px !important; }
+
+            .difficulty-options { grid-template-columns: repeat(3, 1fr) !important; gap: 5px !important; }
+            .difficulty-card { padding: 6px !important; }
+            .diff-icon { font-size: 20px !important; margin-bottom: 3px !important; }
+            .diff-name { font-size: 10px !important; letter-spacing: 1px !important; }
+            .diff-desc { font-size: 9px !important; margin-bottom: 5px !important; }
+            .diff-stats { font-size: 8px !important; line-height: 1.3 !important; }
+            .diff-stats li { padding-left: 10px !important; }
+            .diff-stats li::before { left: 3px !important; }
+
+            .maps-list { gap: 6px !important; max-height: 55vh !important; }
+            .map-card { padding: 8px !important; }
+            .map-icon { font-size: 22px !important; }
+            .map-name { font-size: 12px !important; }
+            .map-diff { font-size: 9px !important; }
+            .map-desc { font-size: 9px !important; }
+
+            .end-box { padding: 14px 18px !important; min-width: 180px !important; }
+            #end-title { font-size: 18px !important; letter-spacing: 2px !important; margin-bottom: 8px !important; }
+            #end-stars { font-size: 20px !important; letter-spacing: 3px !important; margin-bottom: 8px !important; }
+            #end-info { font-size: 11px !important; margin-bottom: 12px !important; }
+            #end-restart { font-size: 12px !important; padding: 6px 18px !important; }
+
+            .rules-content { font-size: 11px !important; }
+            .rules-content h3 { font-size: 13px !important; margin: 10px 0 5px !important; }
+            #rules-towers-list { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+            .rule-tower-card { padding: 6px !important; }
+            .rtc-header { font-size: 11px !important; gap: 4px !important; }
+            .rtc-header img { width: 20px !important; height: 20px !important; }
+            .rtc-cost, .rtc-role, .rtc-desc, .rtc-section > div { font-size: 9px !important; }
+            #rules-close { font-size: 12px !important; padding: 5px 25px !important; }
+        }
+    </style>
+</head>
+<body data-map="ice">
+
+    <div id="rotate-notice">
+        <div class="rotate-icon">📱↻</div>
+        <div class="rotate-title">Поверните устройство</div>
+        <div class="rotate-sub">Для игры нужен горизонтальный экран. Поверните телефон или планшет в ландшафтный режим.</div>
+    </div>
+
+    <div id="difficulty-modal" class="hidden">
+        <div class="difficulty-box">
+            <h2 class="difficulty-title">Выбери сложность</h2>
+            <p class="difficulty-subtitle">Можно сменить в любой момент — но игра начнётся заново.</p>
+            <div class="difficulty-options">
+                <div class="difficulty-card" data-diff="easy">
+                    <div class="diff-icon">🌿</div>
+                    <div class="diff-name">Лёгкий</div>
+                    <div class="diff-desc">Для расслабленной игры</div>
+                    <ul class="diff-stats">
+                        <li>40 HP базы</li>
+                        <li>400 стартовых монет</li>
+                        <li>Враги на 50% слабее</li>
+                        <li>Враги на 30% медленнее</li>
+                        <li>+50% к наградам</li>
+                    </ul>
+                </div>
+                <div class="difficulty-card" data-diff="medium">
+                    <div class="diff-icon">⚔️</div>
+                    <div class="diff-name">Средний</div>
+                    <div class="diff-desc">Сбалансированный вызов</div>
+                    <ul class="diff-stats">
+                        <li>30 HP базы</li>
+                        <li>300 стартовых монет</li>
+                        <li>Враги на 35% слабее</li>
+                        <li>Враги на 20% медленнее</li>
+                        <li>+30% к наградам</li>
+                    </ul>
+                </div>
+                <div class="difficulty-card" data-diff="hard">
+                    <div class="diff-icon">🔥</div>
+                    <div class="diff-name">Высокий</div>
+                    <div class="diff-desc">Настоящий вызов</div>
+                    <ul class="diff-stats">
+                        <li>20 HP базы</li>
+                        <li>200 стартовых монет</li>
+                        <li>Враги на 22% слабее</li>
+                        <li>Враги на 10% медленнее</li>
+                        <li>Стандартные награды</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="difficulty-actions">
+                <button id="difficulty-cancel" class="hidden">← Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="maps-modal" class="hidden">
+        <div class="maps-box">
+            <h2 class="maps-title">Выбери карту</h2>
+            <p class="maps-subtitle">Смена карты перезапустит игру.</p>
+            <div id="maps-list" class="maps-list"></div>
+            <div class="maps-actions">
+                <button id="maps-close">← Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container"></div>
+    <div id="fatal-error"></div>
+
+    <svg id="pointer-svg">
+        <line id="tower-pointer" x1="0" y1="0" x2="0" y2="0" />
+    </svg>
+
+    <div id="hud">
+        <div class="hud-item" id="hud-hp"><span class="hud-icon">❤</span> <span class="hud-val">20</span>/<span class="hud-max">20</span></div>
+        <div class="hud-item" id="hud-coins"><span class="hud-icon">💰</span> <span class="hud-val">200</span></div>
+        <div class="hud-item" id="hud-wave"><span class="hud-icon">🌊</span> Волна <span class="hud-val">0</span>/<span class="hud-max">20</span></div>
+        <div class="hud-item" id="hud-timer"><span class="hud-icon">⏱</span> <span class="hud-val">--</span></div>
+
+        <div class="hud-center-group">
+            <button class="hud-btn" id="hud-maps">🗺️ Карты</button>
+            <button class="hud-btn" id="hud-difficulty">⚙️ Сложность</button>
+            <button class="hud-btn" id="hud-rules">📜 Правила</button>
+            <button class="hud-btn" id="hud-restart">🔄 Рестарт</button>
+        </div>
+
+        <div class="hud-speed-group">
+            <button class="hud-btn speed-btn" data-speed="1">×1</button>
+            <button class="hud-btn speed-btn" data-speed="2">×2</button>
+            <button class="hud-btn speed-btn" data-speed="5">×5</button>
+            <button class="hud-btn" id="hud-pause">⏸</button>
+            <button class="hud-btn" id="hud-audio">🔊</button>
+        </div>
+    </div>
+
+    <div id="shop"></div>
+    <div id="tower-panel" class="hidden"></div>
+
+    <div id="end-overlay" class="hidden">
+        <div class="end-box">
+            <div id="end-title"></div>
+            <div id="end-stars"></div>
+            <div id="end-info"></div>
+            <button id="end-restart">Заново</button>
+        </div>
+    </div>
+
+    <div id="rules-modal" class="hidden">
+        <div class="rules-box">
+            <h2>📜 Правила</h2>
+            <div class="rules-content">
+                <h3>🎯 Цель игры</h3>
+                <p>Отбить <b>20 волн</b>. Если враг дошёл до ворот — снимает HP.</p>
+                <h3>🛡️ Башни</h3>
+                <div id="rules-towers-list"></div>
+            </div>
+            <button id="rules-close">Понятно</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+
+    <script src="../../js/core/audio.js"></script>
+    <script src="../../js/core/engine.js"></script>
+    <script src="../../js/world/grid.js"></script>
+    <script src="../../js/towers/towers-data.js"></script>
+    <script src="../../js/towers/towers-models.js"></script>
+    <script src="../../js/towers/towers-build.js"></script>
+    <script src="../../js/towers/towers-combat.js"></script>
+
+    <script src="../../js/core/Ice/textures.js"></script>
+    <script src="../../js/world/Ice/maps.js"></script>
+    <script src="../../js/world/Ice/path.js"></script>
+    <script src="../../js/world/Ice/decor.js"></script>
+    <script src="../../js/enemies/Ice/enemies-data.js"></script>
+    <script src="../../js/enemies/Ice/enemies-models.js"></script>
+    <script src="../../js/enemies/Ice/enemies-move.js"></script>
+    <script src="../../js/enemies/Ice/enemies-spawn.js"></script>
+
+    <script src="../../js/game/state.js"></script>
+    <script src="../../js/settings/save.js"></script>
+    <script src="../../js/game/ui-hud.js"></script>
+    <script src="../../js/game/ui-shop.js"></script>
+    <script src="../../js/game/ui-tower-panel.js"></script>
+    <script src="../../js/game/ui-rules.js"></script>
+    <script src="../../js/game/ui-maps.js"></script>
+    <script src="../../js/game/input.js"></script>
+
+    <script>
+    (function() {
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                       || window.innerWidth < 900;
+        if (!isMobile) return;
+
+        var unlocked = false;
+        function tryUnlockOrientation() {
+            if (unlocked) return;
+            unlocked = true;
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    var p = document.documentElement.requestFullscreen();
+                    if (p && p.catch) p.catch(function(){});
+                }
+                if (screen.orientation && screen.orientation.lock) {
+                    var q = screen.orientation.lock('landscape');
+                    if (q && q.catch) q.catch(function(){});
+                }
+            } catch(e) {}
+        }
+
+        tryUnlockOrientation();
+        document.addEventListener('touchstart', tryUnlockOrientation, { once: true, passive: true });
+        document.addEventListener('click', tryUnlockOrientation, { once: true });
+    })();
+    </script>
+</body>
+</html>

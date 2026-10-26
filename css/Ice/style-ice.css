@@ -1,0 +1,164 @@
+/* ═══════════════════════════════════════════
+   ICE — ледяная тема.
+   Структура в css/style.css. Здесь только цвета.
+   ═══════════════════════════════════════════ */
+
+/* ─── Модалка сложности ─── */
+#difficulty-modal {
+    background: radial-gradient(ellipse at center, rgba(8, 20, 40, 0.96) 0%, rgba(3, 8, 18, 0.98) 100%);
+}
+.difficulty-box {
+    background: linear-gradient(180deg, rgba(15, 30, 55, 0.97), rgba(6, 15, 30, 0.97));
+    border: 2px solid #4466aa;
+    box-shadow:
+        0 0 60px rgba(100, 180, 255, 0.25),
+        0 0 100px rgba(50, 100, 200, 0.15);
+}
+.difficulty-title {
+    color: #cceeff;
+    text-shadow: 0 0 15px rgba(180, 220, 255, 0.7);
+}
+.difficulty-subtitle { color: rgba(200, 220, 255, 0.7); }
+
+.difficulty-card {
+    background: rgba(8, 18, 35, 0.85);
+    border: 2px solid rgba(70, 110, 180, 0.5);
+}
+.difficulty-card:hover {
+    transform: translateY(-4px);
+    background: rgba(15, 30, 55, 0.95);
+}
+.difficulty-card[data-diff="easy"]:hover   { border-color: #66ffaa; box-shadow: 0 0 30px rgba(100, 255, 180, 0.4); }
+.difficulty-card[data-diff="medium"]:hover { border-color: #88ccff; box-shadow: 0 0 30px rgba(140, 200, 255, 0.4); }
+.difficulty-card[data-diff="hard"]:hover   { border-color: #ff5588; box-shadow: 0 0 30px rgba(255, 90, 140, 0.4); }
+
+.difficulty-card.preselected {
+    border-color: rgba(140, 200, 255, 0.9);
+    box-shadow: 0 0 15px rgba(140, 200, 255, 0.4);
+}
+.difficulty-card.preselected::after { color: #88ccff; }
+
+.diff-icon { filter: drop-shadow(0 0 10px rgba(150, 200, 255, 0.6)); }
+.difficulty-card[data-diff="easy"] .diff-name   { color: #88ffcc; text-shadow: 0 0 10px rgba(100, 255, 180, 0.5); }
+.difficulty-card[data-diff="medium"] .diff-name { color: #aaddff; text-shadow: 0 0 10px rgba(170, 220, 255, 0.5); }
+.difficulty-card[data-diff="hard"] .diff-name   { color: #ff88aa; text-shadow: 0 0 10px rgba(255, 130, 170, 0.5); }
+
+.diff-desc { color: rgba(200, 220, 255, 0.75); }
+.diff-stats { color: rgba(200, 220, 255, 0.9); }
+.diff-stats li::before { color: #88ccff; }
+
+#difficulty-cancel {
+    border-color: rgba(180, 220, 255, 0.5);
+    color: rgba(200, 230, 255, 0.85);
+}
+#difficulty-cancel:hover {
+    background: rgba(150, 200, 255, 0.1);
+    border-color: rgba(180, 220, 255, 0.9);
+    color: #cceeff;
+}
+
+/* ─── Модалка выбора карты ─── */
+#maps-modal {
+    background: radial-gradient(ellipse at center, rgba(8, 20, 40, 0.96) 0%, rgba(3, 8, 18, 0.98) 100%);
+}
+.maps-box {
+    background: linear-gradient(180deg, rgba(15, 30, 55, 0.97), rgba(6, 15, 30, 0.97));
+    border: 2px solid #4466aa;
+    box-shadow:
+        0 0 60px rgba(100, 180, 255, 0.25),
+        0 0 100px rgba(50, 100, 200, 0.15);
+}
+.maps-title {
+    color: #cceeff;
+    text-shadow: 0 0 15px rgba(180, 220, 255, 0.7);
+}
+.maps-subtitle { color: rgba(200, 220, 255, 0.7); }
+
+.maps-list::-webkit-scrollbar-thumb { background: #4466aa; }
+
+.map-card {
+    background: rgba(8, 18, 35, 0.85);
+    border-color: rgba(70, 110, 180, 0.5);
+}
+.map-card:hover:not(.disabled) {
+    background: rgba(15, 30, 55, 0.95);
+    border-color: #88ccff;
+    box-shadow: 0 0 30px rgba(140, 200, 255, 0.5);
+}
+.map-icon { filter: drop-shadow(0 0 10px rgba(150, 200, 255, 0.6)); }
+.map-name {
+    color: #cceeff;
+    text-shadow: 0 0 10px rgba(180, 220, 255, 0.7);
+}
+.map-diff { color: rgba(200, 220, 255, 0.75); }
+.map-desc { color: rgba(200, 220, 255, 0.9); }
+
+#maps-close {
+    border-color: rgba(180, 220, 255, 0.5);
+    color: rgba(200, 230, 255, 0.85);
+}
+#maps-close:hover {
+    background: rgba(150, 200, 255, 0.1);
+    border-color: rgba(180, 220, 255, 0.9);
+    color: #cceeff;
+}
+
+/* ─── Модалка правил ─── */
+#rules-modal { background: rgba(8, 20, 40, 0.94); }
+.rules-box {
+    background: linear-gradient(180deg, rgba(15, 30, 55, 0.97), rgba(6, 15, 30, 0.97));
+    border: 2px solid #4466aa;
+    box-shadow: 0 0 50px rgba(100, 180, 255, 0.35);
+}
+.rules-box h2 {
+    color: #cceeff;
+    text-shadow: 0 0 15px rgba(180, 220, 255, 0.7);
+}
+.rules-content::-webkit-scrollbar-thumb { background: #4466aa; }
+.rules-content h3 {
+    color: #88ccff;
+    border-bottom-color: rgba(140, 200, 255, 0.3);
+}
+.rules-content b { color: #cceeff; }
+
+.rule-tower-card {
+    background: rgba(5, 15, 30, 0.75);
+    border-color: rgba(140, 200, 255, 0.4);
+}
+.rtc-header { color: #aaddff; }
+.rtc-cost { color: #cceeff; }
+.rtc-role { color: #88ccff; }
+.rtc-desc { border-bottom-color: rgba(140, 200, 255, 0.2); }
+.rtc-section-title { color: #cceeff; }
+.rtc-section b { color: #aaddff; }
+.rtc-upgrades { border-top-color: rgba(180, 220, 255, 0.2); }
+.rtc-cost-small { color: #cceeff; }
+
+#rules-close {
+    border-color: #88ccff;
+    color: #cceeff;
+    box-shadow: 0 0 14px rgba(140, 200, 255, 0.5);
+}
+#rules-close:hover {
+    background: rgba(140, 200, 255, 0.18);
+    box-shadow: 0 0 24px rgba(140, 200, 255, 0.9);
+}
+
+/* ─── Финальный экран ─── */
+#end-overlay { background: rgba(8, 20, 40, 0.9); }
+.end-box {
+    background: linear-gradient(180deg, rgba(15, 30, 55, 0.97), rgba(6, 15, 30, 0.97));
+    border: 1.5px solid #88ccff;
+    box-shadow: 0 0 40px rgba(140, 200, 255, 0.5);
+}
+#end-stars { color: #cceeff; text-shadow: 0 0 14px rgba(180, 220, 255, 0.9); }
+#end-info { color: #cceeff; }
+#end-restart {
+    border-color: #88ccff;
+    color: #cceeff;
+    box-shadow: 0 0 14px rgba(140, 200, 255, 0.5);
+}
+#end-restart:hover {
+    background: rgba(140, 200, 255, 0.18);
+    box-shadow: 0 0 26px rgba(140, 200, 255, 0.9);
+}
