@@ -302,26 +302,46 @@ canvas {
 /* ═══════════════════════════════════════════
    ПАНЕЛЬ ВЫБРАННОЙ БАШНИ
    ═══════════════════════════════════════════ */
+#tower-panel-bounds {
+    position: fixed;
+    inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+           max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    pointer-events: none; visibility: hidden;
+}
 #tower-panel {
-    position: fixed; z-index: 20;
-    right: max(18px, env(safe-area-inset-right)); bottom: 110px;
-    width: 208px; max-height: calc(100dvh - 180px); overflow-y: auto;
-    padding: 13px; background: var(--ui-panel); color: var(--ui-text);
+    position: fixed; z-index: 20; left: 0; top: 0;
+    width: 224px; padding: 10px;
+    display: flex; flex-direction: column; gap: 7px;
+    background: var(--ui-panel); color: var(--ui-text);
     border: 1px solid var(--ui-border); border-radius: 5px;
     box-shadow: 0 5px 20px #0005; font-size: 12px;
+    touch-action: manipulation;
 }
 #tower-panel.hidden { display: none; }
+.tp-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-shrink: 0; }
 .tp-title { font-weight: 700; font-size: 13px; color: var(--ui-text); }
-.tp-stars { color: var(--ui-accent); font-size: 11px; letter-spacing: 2px; margin: 5px 0 8px; }
-.tp-stats { color: var(--ui-muted); font-size: 11px; line-height: 1.5; margin-bottom: 10px; }
+.tp-stars { color: var(--ui-accent); font-size: 11px; letter-spacing: 2px; margin-top: 3px; }
+.tp-close {
+    flex-shrink: 0; width: 44px; height: 44px; padding: 0;
+    border: 1px solid var(--ui-border); border-radius: 3px;
+    background: var(--ui-raised); color: var(--ui-text); font: inherit; font-size: 22px;
+    cursor: pointer;
+}
+.tp-close:hover { border-color: var(--ui-accent); color: var(--ui-accent); }
+.tp-stats {
+    color: var(--ui-muted); font-size: 11px; line-height: 1.5;
+    overflow-y: auto; min-height: 0; touch-action: pan-y; overscroll-behavior: contain;
+}
 .tp-stats b { color: var(--ui-text); font-weight: 600; }
+.tp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex-shrink: 0; }
 .tp-btn {
-    width: 100%; padding: 6px; margin-bottom: 5px;
+    width: 100%; min-height: 44px; padding: 6px;
     font-size: 12px; font-weight: 700; cursor: pointer;
     transition: background .15s, border-color .15s;
 }
 .tp-btn:disabled { opacity: .4; cursor: not-allowed; }
-.tp-btn.sell { margin-bottom: 0; }
+#game-container canvas { touch-action: none; }
+:is(.tp-btn, .tp-close):focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
 
 /* ═══════════════════════════════════════════
    ФИНАЛЬНЫЙ ЭКРАН
@@ -800,13 +820,6 @@ body[data-map] :is(.exit-title, #end-title, #end-stars, .maps-title, .difficulty
 body[data-map] .exit-icon { display: none; }
 body[data-map] :is(.difficulty-card, .map-card) { border-color: var(--ui-border); box-shadow: none; }
 body[data-map] :is(.difficulty-card, .map-card):hover { border-color: var(--ui-accent); box-shadow: none; }
-@media (max-width: 900px), (max-height: 500px) {
-    #tower-panel {
-        right: max(10px, env(safe-area-inset-right));
-        bottom: 84px; width: 190px; max-height: calc(100dvh - 145px);
-        padding: 10px;
-    }
-}
 @media (prefers-reduced-motion: reduce) {
     .hud-btn, .shop-card { transition: none; }
 }
