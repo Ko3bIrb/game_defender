@@ -16,9 +16,9 @@ jobs:
     timeout-minutes: 20
     env:
       GODOT_VERSION: '4.6.3'
-      XDG_DATA_HOME: ${{ runner.temp }}/godot-data
-      XDG_CONFIG_HOME: ${{ runner.temp }}/godot-config
-      XDG_CACHE_HOME: ${{ runner.temp }}/godot-cache
+      XDG_DATA_HOME: /tmp/defender-godot/data
+      XDG_CONFIG_HOME: /tmp/defender-godot/config
+      XDG_CACHE_HOME: /tmp/defender-godot/cache
     steps:
       - uses: actions/checkout@v4
       - name: Install official Godot and Windows export template
