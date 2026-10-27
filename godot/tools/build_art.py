@@ -60,6 +60,7 @@ CLOTH=material('Woven midnight wool','253543',0,.96)
 CLOTHRED=material('Worn crimson cloth','4f2430',0,.9)
 PINE=material('Fir needles','213e3d',0,.9)
 EMBER=material('Ember core','ff8939',0,.35,1.6,False)
+LAVA=material('Cooling lava','d43814',0,.95,.6,False)
 FROST=material('Frost core','78d9e9',0,.2,2,False)
 SOUL=material('Soul light','80d6a3',0,.25,2,False)
 WARM=material('Lantern flame','ffd39a',0,.4,3,False)
@@ -648,13 +649,25 @@ def world(mapid):
     for sign in [-1,1]:tube('Bare branch',(x,2,z),(x+sign*1.3,3.1,z+.3),.085,WOOD,r2=.015)
     curve('Lava seam',[(x-2,.05,z),(x-1,.06,z+.5),(x+.2,.05,z+.2),(x+1,.05,z+1.3)],.055,EMBER)
  if not ice:
-  # A subdued lava ribbon beyond the combat corridor, with emissive reflections.
-  path=[Vector((-88,1.5,36)),Vector((-57,1.5,32)),Vector((-29,1.5,39)),Vector((3,1.5,34)),Vector((31,1.5,40)),Vector((59,1.5,33)),Vector((88,1.5,39))]
-  verts=[]
-  for i,point in enumerate(path):
-   tangent=(path[min(i+1,len(path)-1)]-path[max(0,i-1)]).normalized();normal=Vector((-tangent.z,0,tangent.x))
-   verts.extend([point+normal*.6,point-normal*.6])
-  mesh('Quiet lava river',verts,[(i*2,i*2+2,i*2+3,i*2+1) for i in range(len(path)-1)],EMBER)
+  # A winding, dim fissure follows the actual terrain instead of floating over it.
+  keys=[Vector((-88,0,36)),Vector((-57,0,32)),Vector((-29,0,39)),Vector((3,0,34)),Vector((31,0,40)),Vector((59,0,33)),Vector((88,0,39))]
+  path=[]
+  for i in range(len(keys)-1):
+   p0=keys[max(0,i-1)];p1=keys[i];p2=keys[i+1];p3=keys[min(len(keys)-1,i+2)]
+   for j in range(18):
+    t=j/18
+    point=.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t)
+    d=near_route(point.x,point.z,route)
+    point.y=-.35+min(1,max(0,(d-6)/15))*(math.sin(point.x*.11)*math.cos(point.z*.13)*1.2+.8)+.10
+    path.append(point)
+  for bank,mat in [(True,BASALT),(False,LAVA)]:
+   verts=[]
+   for i,point in enumerate(path):
+    tangent=(path[min(i+1,len(path)-1)]-path[max(0,i-1)]).normalized();normal=Vector((-tangent.z,0,tangent.x)).normalized()
+    width=(.72 if bank else .30)*(1+.22*math.sin(i*1.7))
+    at=point-Vector((0,.025 if bank else 0,0))
+    verts.extend([at+normal*width,at-normal*width])
+   mesh('Basalt fissure' if bank else 'Cooling lava',verts,[(i*2,i*2+2,i*2+3,i*2+1) for i in range(len(path)-1)],mat)
  # Background ridges are solid meshes with coherent surfaces.
  for index,x in enumerate([-85,-50,-15,25,65,100]):
   height=random.uniform(18,29);width=random.uniform(18,26);verts=[];faces=[];rings=12;segments=30
