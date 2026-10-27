@@ -332,6 +332,7 @@ function fitCameraToField() {
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     if (typeof updateBaseHealthPosition === 'function') updateBaseHealthPosition();
+    if (typeof scheduleTowerPanelPosition === 'function') scheduleTowerPanelPosition();
 }
 
 function createFloor() {
