@@ -43,6 +43,7 @@ jobs:
           mkdir -p godot/build/windows
           "$engine" --headless --path godot --export-release "Windows Desktop"
           cp godot/LICENSE-GODOT.txt godot/build/windows/
+          cp godot/assets/fonts/LICENSE.txt godot/build/windows/LICENSE-FONTS.txt
           cp godot/README.md godot/build/windows/README.md
       - uses: actions/upload-artifact@v4
         with:

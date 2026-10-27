@@ -4,6 +4,7 @@ const Data = preload("res://scripts/game_data.gd")
 const Simulation = preload("res://scripts/simulation.gd")
 const SaveStore = preload("res://scripts/save_store.gd")
 const Sound = preload("res://scripts/sound.gd")
+const Atmosphere = preload("res://scripts/atmosphere.gd")
 const TYPES = ["gun", "sniper", "mortar", "slow", "skyguard", "amp"]
 
 var save_store = SaveStore.new()
@@ -28,8 +29,10 @@ var tower_stats: Label
 var upgrade_button: Button
 var sell_button: Button
 var audio_button: Button
-var pause_button: Button
-var speed_buttons: Dictionary = {}
+var speed_slider: HSlider
+var speed_value: Label
+var _pause_menu_open = false
+var _return_to_pause = false
 var shop_buttons: Dictionary = {}
 var selected: Dictionary = {}
 var hovered: Dictionary = {}
@@ -58,6 +61,7 @@ var _screenshot_path = ""
 var _screenshot_timer = 0.0
 
 func _ready() -> void:
+	get_window().mode = Window.MODE_FULLSCREEN
 	get_tree().auto_accept_quit = false
 	sound = Sound.new()
 	add_child(sound)
@@ -73,6 +77,10 @@ func _ready() -> void:
 	dialog_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(dialog_layer)
 	get_viewport().size_changed.connect(_layout)
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--windowed":
+			get_window().mode = Window.MODE_WINDOWED
+			DisplayServer.window_set_size(Vector2i(1440, 900))
 	show_menu()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--map="):
@@ -108,6 +116,7 @@ func _style(background: Color, border: Color, padding: int = 8) -> StyleBoxFlat:
 func _theme() -> Theme:
 	var theme = Theme.new()
 	theme.default_font_size = 14
+	theme.default_font = preload("res://assets/fonts/Interface.ttf")
 	theme.set_color("font_color", "Label", Color("e8e1d3") if accent.r > accent.b else Color("d4e6ed"))
 	theme.set_color("font_color", "Button", muted)
 	theme.set_color("font_hover_color", "Button", accent)
@@ -140,11 +149,13 @@ func _remove_game_ui() -> void:
 			ui.remove_child(child)
 			child.queue_free()
 	shop_buttons.clear()
-	speed_buttons.clear()
+	speed_slider = null
+	speed_value = null
 	tower_panel = null
 
 func show_menu() -> void:
 	_close_dialog()
+	_return_to_pause = false
 	if world != null:
 		world.queue_free()
 		world = null
@@ -169,31 +180,88 @@ func show_menu() -> void:
 	menu = Control.new()
 	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui.add_child(menu)
-	var backdrop = TextureRect.new()
-	backdrop.texture = load("res://assets/menu_background.png")
-	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	menu.add_child(backdrop)
+	_menu_backdrop(menu)
 	var box = PanelContainer.new()
 	box.name = "MenuBox"
+	box.add_theme_stylebox_override("panel", _style(Color(0.025, 0.045, 0.075, 0.65), Color(0.72, 0.80, 0.85, 0.15), 28))
 	menu.add_child(box)
 	var rows = VBoxContainer.new()
-	rows.add_theme_constant_override("separation", 12)
+	rows.add_theme_constant_override("separation", 14)
 	box.add_child(rows)
-	var title = _label("ЗАЩИТНИК", rows, 42)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var subtitle = _label("ПОСЛЕДНИЙ БАСТИОН", rows, 13)
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_button("ИГРАТЬ", func(): _choose_difficulty(save_store.data.selected_map), rows, Vector2(390, 54))
-	_button("КАРТЫ", _show_maps, rows, Vector2(390, 48))
-	_button("ПРАВИЛА", _show_rules, rows, Vector2(390, 48))
-	_button("ЗВУК: " + ("ВКЛ" if sound.enabled else "ВЫКЛ"), func(): _toggle_audio(); show_menu(), rows, Vector2(390, 48))
-	_button("ВЫХОД", _quit_game, rows, Vector2(390, 48))
+	_menu_contents(rows, false)
 	_layout()
 	ui.move_child(dialog_layer, ui.get_child_count() - 1)
 	call_deferred("_layout")
+
+func _menu_backdrop(parent: Control) -> void:
+	var image = TextureRect.new()
+	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	image.texture = load("res://assets/winter_watch.png")
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(image)
+	parent.move_child(image, 0)
+	var snow = CPUParticles2D.new()
+	snow.name = "MenuSnow"
+	snow.amount = 100
+	snow.lifetime = 18.0
+	snow.preprocess = 10.0
+	snow.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	snow.emission_rect_extents = Vector2(900, 50)
+	snow.position = Vector2(720, -40)
+	snow.direction = Vector2(0.15, 1)
+	snow.spread = 15
+	snow.gravity = Vector2.ZERO
+	snow.initial_velocity_min = 25
+	snow.initial_velocity_max = 65
+	snow.scale_amount_min = 0.6
+	snow.scale_amount_max = 1.8
+	snow.color = Color(0.8, 0.9, 1, 0.4)
+	parent.add_child(snow)
+	parent.move_child(snow, 1)
+
+func _menu_contents(rows: VBoxContainer, paused: bool) -> void:
+	var caption = _label("ПОСЛЕДНИЙ БАСТИОН  /  ЗИМНЯЯ СТРАЖА", rows, 11)
+	caption.modulate = Color("b6c4cf")
+	var title = _label("ЗАЩИТНИК", rows, 35)
+	title.add_theme_font_override("font", preload("res://assets/fonts/Title.ttf"))
+	title.modulate = Color("f1e5d1")
+	var subtitle = _label("Пока горит огонь — надежда жива.", rows, 12)
+	subtitle.modulate = Color("b6c4cf")
+	_label("ИГРА ПРИОСТАНОВЛЕНА" if paused else "", rows, 10).modulate = Color("dfb878")
+	_button("Продолжить" if paused else "Начать защиту", _close_dialog if paused else func(): _choose_difficulty(save_store.data.selected_map), rows, Vector2(355, 52))
+	_button("Выбрать карту", func(): _open_menu_dialog(_show_maps, paused), rows, Vector2(355, 46))
+	_button("Как играть", func(): _open_menu_dialog(_show_rules, paused), rows, Vector2(355, 46))
+	var audio = _button("Звук: " + ("включён" if sound.enabled else "выключен"), func(): _toggle_audio(), rows, Vector2(355, 46))
+	audio.pressed.connect(func(): audio.text = "Звук: " + ("включён" if sound.enabled else "выключен"))
+	if paused:
+		_button("В главное меню", func(): _open_menu_dialog(_confirm_exit, true), rows, Vector2(355, 46))
+	_button("Выйти из игры", _quit_game, rows, Vector2(355, 46))
+	_label("ESC — ВЕРНУТЬСЯ К ЗАЩИТЕ" if paused else "ОДИНОКИЙ СТРАЖ · ЗИМНИЕ СУМЕРКИ", rows, 10).modulate = Color("8b9da8")
+
+func _open_menu_dialog(callback: Callable, from_pause: bool) -> void:
+	callback.call()
+	_return_to_pause = from_pause
+
+func _show_pause_menu() -> void:
+	if sim == null:
+		return
+	_return_to_pause = false
+	var rows = _dialog("", 435)
+	rows.get_child(0).queue_free()
+	_menu_backdrop(_active_dialog)
+	_menu_contents(rows, true)
+	_pause_menu_open = true
+	if is_instance_valid(world):
+		world.hide()
+
+func _back_dialog() -> void:
+	if _return_to_pause:
+		_return_to_pause = false
+		_show_pause_menu()
+	else:
+		_close_dialog()
 
 func _dialog(title: String, width: float = 600.0) -> VBoxContainer:
 	_close_dialog()
@@ -218,6 +286,9 @@ func _dialog(title: String, width: float = 600.0) -> VBoxContainer:
 	return rows
 
 func _close_dialog() -> void:
+	_pause_menu_open = false
+	if is_instance_valid(world):
+		world.show()
 	if _active_dialog != null:
 		_active_dialog.queue_free()
 		_active_dialog = null
@@ -232,7 +303,7 @@ func _show_maps() -> void:
 		var stars = int(save_store.data.stars.get(id, 0))
 		var text = data.name + "\n" + ("Ад" if id == "hell" else "Лёд") + " · 20 волн · Рекорд: %s · %s" % [best, "★".repeat(stars)]
 		_button(text, func(): save_store.data.selected_map = id; save_store.save(); _choose_difficulty(id), rows, Vector2(600, 90))
-	_button("Назад", _close_dialog, rows)
+	_button("Назад", _back_dialog, rows)
 
 func _choose_difficulty(id: String) -> void:
 	var rows = _dialog("СЛОЖНОСТЬ · " + Data.all().maps[id].name, 640)
@@ -240,7 +311,7 @@ func _choose_difficulty(id: String) -> void:
 		var data = Data.all().difficulty[key]
 		var text = "%s\nЗдоровье: %d · Монеты: %d" % [data.name, data.hp, data.coins]
 		_button(text, func(): start_game(id, key), rows, Vector2(590, 76))
-	_button("Назад", _close_dialog, rows)
+	_button("Назад", _back_dialog, rows)
 
 func _show_rules() -> void:
 	var rows = _dialog("ПРАВИЛА", 760)
@@ -250,7 +321,7 @@ func _show_rules() -> void:
 	var content = VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(content)
-	var intro = _label("Отбейте 20 волн. Враги, дошедшие до крепости, отнимают здоровье.\nВыберите башню внизу и свободную площадку на карте.\nСнайпер строится только на специальных синих площадках.\nПробел — пауза · ← / → — скорость · Esc — отмена выбора.\nПодготовка следующей волны начинается автоматически.", content, 15)
+	var intro = _label("Отбейте 20 волн. Враги, дошедшие до крепости, отнимают здоровье.\nВыберите башню внизу и свободную площадку на карте.\nСнайпер строится только на специальных синих площадках.\nEsc — меню паузы · Ползунок ТЕМП — от 0.25× до 5×.\nПодготовка следующей волны начинается автоматически.", content, 15)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for type in TYPES:
 		var data = Data.all().towers[type]
@@ -260,10 +331,11 @@ func _show_rules() -> void:
 		for level in [2, 3]:
 			var stats = Data.stats(type, level)
 			_label("%d уровень: %s · дальность %.1f · урон %.1f" % [level, data.upgrades[str(level)], stats.range, stats.damage], content, 12)
-	_button("Понятно", _close_dialog, rows)
+	_button("Понятно", _back_dialog, rows)
 
 func start_game(id: String, difficulty_id: String) -> void:
 	_close_dialog()
+	_return_to_pause = false
 	if world != null:
 		world.queue_free()
 	if camera != null:
@@ -308,12 +380,12 @@ func start_game(id: String, difficulty_id: String) -> void:
 	camera.current = true
 	for i in range(sim.spots.size()):
 		var spot = sim.spots[i]
-		var mesh = _mesh(CylinderMesh.new(), Color("a4c5d5") if spot.restricted_to != "" else accent)
+		var mesh = _mesh(CylinderMesh.new(), Color("a4c5d5") if spot.restricted_to != "" else accent, true)
 		mesh.mesh.top_radius = 1.12
 		mesh.mesh.bottom_radius = 1.18
 		mesh.mesh.height = 0.10
 		mesh.mesh.radial_segments = 16
-		mesh.position = spot.position + Vector3.UP * 0.07
+		mesh.position = spot.position + Vector3.UP * 0.27
 		mesh.visible = false
 		world.add_child(mesh)
 		spot_nodes.append(mesh)
@@ -355,54 +427,7 @@ func _mesh(mesh: Mesh, color: Color, unshaded: bool = false) -> MeshInstance3D:
 	return instance
 
 func _lighting(id: String) -> void:
-	var environment = WorldEnvironment.new()
-	var settings = Environment.new()
-	settings.background_mode = Environment.BG_COLOR
-	settings.background_color = Color("120303") if id == "hell" else Color("02050a")
-	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	settings.ambient_light_color = Color("573b31") if id == "hell" else Color("223355")
-	settings.ambient_light_energy = 0.4 if id == "hell" else 0.40
-	settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	environment.environment = settings
-	world.add_child(environment)
-	var sun = DirectionalLight3D.new()
-	sun.light_color = Color("ffbb88") if id == "hell" else Color("4466aa")
-	sun.light_energy = 0.5 if id == "hell" else 0.4
-	sun.rotation_degrees = Vector3(-60, -30, 0)
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 400.0
-	world.add_child(sun)
-	for x in [-45.0, 45.0]:
-		var light = OmniLight3D.new()
-		light.position = Vector3(x, 12, 0)
-		light.omni_range = 45
-		light.light_color = (Color("ff3b0a") if x < 0 else Color("fff0b5")) if id == "hell" else Color("44aaff")
-		light.light_energy = 2.0
-		world.add_child(light)
-	var particles = CPUParticles3D.new()
-	particles.amount = 200
-	particles.lifetime = 18
-	particles.preprocess = 5
-	particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-	particles.emission_box_extents = Vector3(75, 15, 40)
-	particles.direction = Vector3(0.1, -1, 0)
-	particles.gravity = Vector3.ZERO
-	particles.initial_velocity_min = 1.0
-	particles.initial_velocity_max = 2.0
-	particles.position.y = 20
-	particles.scale_amount_min = 0.02
-	particles.scale_amount_max = 0.08
-	var particle_mesh = SphereMesh.new()
-	particle_mesh.radius = 0.5
-	particle_mesh.height = 1.0
-	particle_mesh.radial_segments = 4
-	particle_mesh.rings = 2
-	particles.mesh = particle_mesh
-	var material = StandardMaterial3D.new()
-	material.albedo_color = Color("ff9c68") if id == "hell" else Color("d1e6ff")
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	particles.material_override = material
-	world.add_child(particles)
+	Atmosphere.setup(world, id)
 
 func _build_hud() -> void:
 	navigation = VBoxContainer.new()
@@ -412,17 +437,30 @@ func _build_hud() -> void:
 	navigation.add_child(nav_panel)
 	var nav = HBoxContainer.new()
 	nav_panel.add_child(nav)
-	_button("⌂ Меню", _confirm_exit, nav)
+	_button("Меню · Esc", _show_pause_menu, nav)
 	_button("Карты", _show_maps, nav)
 	_button("Правила", _show_rules, nav)
 	_button("Сложность", func(): _choose_difficulty(sim.map_id), nav)
 	speed_bar = HBoxContainer.new()
 	ui.add_child(speed_bar)
-	for value in [1, 2, 5]:
-		var button = _button(str(value) + "×", func(): sim.speed = value; sim.paused = false; _refresh(), speed_bar, Vector2(46, 40))
-		speed_buttons[value] = button
-	pause_button = _button("Ⅱ", func(): sim.paused = not sim.paused; _refresh(), speed_bar, Vector2(44, 40))
-	audio_button = _button("Звук", _toggle_audio, speed_bar, Vector2(58, 40))
+	var tempo = VBoxContainer.new()
+	tempo.add_theme_constant_override("separation", 3)
+	speed_bar.add_child(tempo)
+	speed_value = _label("ТЕМП  ·  1.00×", tempo, 11)
+	speed_value.modulate = muted
+	speed_slider = HSlider.new()
+	speed_slider.custom_minimum_size = Vector2(220, 30)
+	speed_slider.min_value = 0.25
+	speed_slider.max_value = 5.0
+	speed_slider.step = 0.05
+	speed_slider.value = 1.0
+	speed_slider.tooltip_text = "Темп боя · 0.25× — 5× · Двойной щелчок: обычная скорость"
+	speed_slider.value_changed.connect(func(value): sim.speed = value; _refresh())
+	speed_slider.gui_input.connect(func(event):
+		if event is InputEventMouseButton and event.double_click:
+			speed_slider.value = 1.0)
+	tempo.add_child(speed_slider)
+	audio_button = null
 	wave_label = _label("", ui, 15)
 	dock = PanelContainer.new()
 	ui.add_child(dock)
@@ -471,7 +509,7 @@ func _build_hud() -> void:
 func _confirm_exit() -> void:
 	var rows = _dialog("Выйти в меню?", 500)
 	_label("Текущий прогресс забега будет потерян.", rows)
-	_button("Остаться", _close_dialog, rows)
+	_button("Остаться", _back_dialog, rows)
 	_button("Выйти", show_menu, rows)
 
 func _toggle_audio() -> void:
@@ -487,10 +525,10 @@ func _refresh() -> void:
 	wave_label.text = "ВОЛНА  %d / 20" % sim.wave
 	health_label.text = str(sim.hp)
 	health_label.modulate = Color("f3897e") if sim.hp < sim.max_hp * 0.3 else Color("f0eee4")
-	for value in speed_buttons:
-		speed_buttons[value].modulate = accent if sim.speed == value else muted
-	pause_button.modulate = accent if sim.paused else muted
-	audio_button.text = "Звук" if sound.enabled else "Тихо"
+	if is_instance_valid(speed_value):
+		speed_value.text = "ТЕМП  ·  %.2f×" % sim.speed
+	if is_instance_valid(speed_slider):
+		speed_slider.set_value_no_signal(sim.speed)
 	for type in shop_buttons:
 		shop_buttons[type].disabled = sim.coins < Data.all().towers[type].baseCost
 		shop_buttons[type].modulate = accent if building == type else Color.WHITE
@@ -522,7 +560,7 @@ func _layout() -> void:
 		if is_instance_valid(menu):
 			var box = menu.get_node_or_null("MenuBox")
 			if box != null:
-				box.position = Vector2((view.x - 434) * 0.5, view.y * 0.08)
+				box.position = Vector2(view.x * 0.075, maxf(24, (view.y - box.get_combined_minimum_size().y) * 0.5))
 		return
 	navigation.position = Vector2(18, 14)
 	speed_bar.position = Vector2(view.x - speed_bar.get_combined_minimum_size().x - 18, 32)
@@ -661,7 +699,7 @@ func _enemy_spawned(enemy: Dictionary) -> void:
 	fill.mesh.size = Vector2(2.0, 0.13)
 	fill.position.z = 0.01
 	bar.add_child(fill)
-	enemy_nodes[enemy.id] = {"node": node, "bar": bar, "fill": fill}
+	enemy_nodes[enemy.id] = {"node": node, "bar": bar, "fill": fill, "joints": node.find_children("motion_*", "Node3D", true, false)}
 	var data = sim.map.enemies[enemy.type]
 	sound.growl(data.get("isBoss", false))
 
@@ -786,20 +824,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if event.keycode == KEY_ESCAPE:
 		if _active_dialog != null:
-			_close_dialog()
+			_back_dialog()
 		elif sim != null:
-			cancel_build()
-			deselect()
+			_show_pause_menu()
 		return
-	if sim == null or _active_dialog != null:
-		return
-	if event.keycode == KEY_SPACE:
-		sim.paused = not sim.paused
-	elif event.keycode == KEY_RIGHT:
-		sim.speed = 2 if sim.speed == 1 else 5
-	elif event.keycode == KEY_LEFT:
-		sim.speed = 2 if sim.speed == 5 else 1
-	_refresh()
 
 func _hide_range() -> void:
 	if is_instance_valid(range_mesh):
@@ -824,6 +852,7 @@ func _draw_range(position: Vector3, radius: float, color: Color) -> void:
 		mesh.surface_add_vertex(Vector3(cos(angle) * radius, 0.15, sin(angle) * radius))
 	mesh.surface_end()
 	range_mesh = _mesh(mesh, color, true)
+	range_mesh.material_override.no_depth_test = true
 	range_mesh.position = position
 	world.add_child(range_mesh)
 
@@ -921,10 +950,23 @@ func _process(delta: float) -> void:
 			var entry = enemy_nodes[enemy.id]
 			var data = sim.map.enemies[enemy.type]
 			var phase = enemy.walk_phase
+			for joint in entry.joints:
+				var sign = -1.0 if str(joint.name).ends_with("L") or str(joint.name).contains("-1") else 1.0
+				if str(joint.name).contains("leg"):
+					joint.rotation.x = sin(phase) * 0.32 * sign
+				elif str(joint.name).contains("arm"):
+					joint.rotation.x = -sin(phase) * 0.20 * sign
+				elif str(joint.name).contains("wing"):
+					joint.rotation.z = sin(phase) * 0.32 * sign
+				elif str(joint.name).contains("head"):
+					joint.rotation.y = sin(phase * 0.35) * 0.06
+				elif str(joint.name).contains("torso"):
+					joint.scale.y = 1.0 + sin(phase * 0.5) * 0.012
 			entry.node.position = enemy.position + Vector3.UP * (enemy.base_y + (sin(phase) if data.flying else abs(sin(phase))) * data.walk.bobAmp * data.size)
 			var direction = sim.waypoints[enemy.path_index + 1] - sim.waypoints[enemy.path_index]
 			entry.node.rotation = Vector3(cos(phase * 2) * data.walk.get("leanAmp", 0.02), atan2(direction.x, direction.z), sin(phase) * data.walk.swayAmp * data.size)
-			entry.bar.position = enemy.position + Vector3.UP * (enemy.base_y + data.size + 0.8)
+			var body_height = 1.9 if enemy.type == "hound" else 1.75 if "ballista" in enemy.type else 3.4
+			entry.bar.position = enemy.position + Vector3.UP * (body_height * data.size + 0.45 + (enemy.base_y - data.size * 0.35 if data.flying else 0.0))
 			entry.bar.quaternion = camera.quaternion
 			var ratio = clampf(enemy.hp / enemy.max_hp, 0.001, 1.0)
 			entry.fill.scale.x = ratio
