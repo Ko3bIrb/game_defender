@@ -29,6 +29,8 @@ function initInput() {
         }
         if (isModalOpen) return;
 
+        if (e.code === 'Space' && e.target.closest('button, summary')) return;
+
         if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
             e.preventDefault();
             GameState.paused = !GameState.paused;

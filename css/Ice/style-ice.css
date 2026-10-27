@@ -1,3 +1,18 @@
+body[data-map="ice"] {
+    --ui-panel: rgba(15, 28, 37, .94);
+    --ui-raised: #203a48;
+    --ui-border: #4b6e7e;
+    --ui-accent: #a9d8e5;
+    --ui-text: #e5f0f3;
+    --ui-muted: #a0b8c3;
+    --ui-selected: #294a5b;
+    --ui-danger: #f1a4a4;
+    --neon-purple: #648d9e;
+    --neon-cyan: #a9d8e5;
+    --neon-pink: #8fb9ca;
+    --text-primary: #e5f0f3;
+}
+
 /* ═══════════════════════════════════════════
    ICE — ледяная тема.
    Структура в css/style.css. Здесь только цвета.

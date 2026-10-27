@@ -1,3 +1,18 @@
+body[data-map="hell"] {
+    --ui-panel: rgba(25, 19, 17, .94);
+    --ui-raised: #30241e;
+    --ui-border: #634b3a;
+    --ui-accent: #d5a16b;
+    --ui-text: #eee2d2;
+    --ui-muted: #b3a08e;
+    --ui-selected: #483123;
+    --ui-danger: #ee8f7e;
+    --neon-purple: #977350;
+    --neon-cyan: #d5a16b;
+    --neon-pink: #c98963;
+    --text-primary: #eee2d2;
+}
+
 /* ═══════════════════════════════════════════
    HELL — огненная тема.
    Структура (position/display/padding/размеры/анимации)

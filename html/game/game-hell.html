@@ -59,111 +59,6 @@
         }
 
         @media (hover: none), (max-width: 1400px) {
-            #hud {
-                flex-wrap: nowrap !important;
-                row-gap: 0;
-                column-gap: 2px !important;
-                align-items: center;
-                top: 4px !important;
-                left: 4px !important;
-                right: 4px !important;
-                width: auto !important;
-            }
-
-            .hud-item {
-                order: 0 !important;
-                flex: 0 0 auto !important;
-                flex-shrink: 0 !important;
-                flex-grow: 0 !important;
-                flex-basis: auto !important;
-                min-width: max-content !important;
-                overflow: visible !important;
-                font-size: clamp(6px, 1.2vw, 12px) !important;
-                padding: clamp(1px, 0.4vw, 6px) clamp(2px, 0.6vw, 8px) !important;
-                gap: clamp(1px, 0.3vw, 4px) !important;
-                border-radius: 5px !important;
-                white-space: nowrap;
-            }
-            .hud-icon {
-                font-size: clamp(6px, 1.2vw, 12px) !important;
-            }
-
-            .hud-center-group {
-                order: 1 !important;
-                position: static !important;
-                left: auto !important;
-                transform: none !important;
-                margin: 0 !important;
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                flex: 0 1 auto !important;
-                min-width: 0 !important;
-                overflow: hidden !important;
-                gap: clamp(1px, 0.3vw, 4px) !important;
-            }
-            .hud-center-group .hud-btn {
-                flex: 0 1 auto !important;
-                min-width: 0 !important;
-                font-size: clamp(6px, 1.2vw, 12px) !important;
-                padding: clamp(1px, 0.4vw, 6px) clamp(2px, 0.6vw, 8px) !important;
-                border-radius: 5px !important;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .hud-speed-group {
-                order: 999 !important;
-                margin-left: auto !important;
-                margin-right: 0 !important;
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                flex: 0 0 auto !important;
-                flex-shrink: 0 !important;
-                gap: clamp(1px, 0.3vw, 4px) !important;
-            }
-            .hud-speed-group .hud-btn {
-                flex: 0 0 auto !important;
-                font-size: clamp(6px, 1.2vw, 12px) !important;
-                padding: clamp(1px, 0.4vw, 6px) clamp(2px, 0.6vw, 8px) !important;
-                border-radius: 5px !important;
-                white-space: nowrap;
-                min-width: 0 !important;
-            }
-            #hud-pause,
-            #hud-audio,
-            #hud-difficulty {
-                min-width: 0 !important;
-            }
-
-            /* Магазин — уменьшен в 1.2 раза */
-            .shop-card {
-                min-width: 55px !important;
-                padding: 3px 4px !important;
-                border-radius: 5px !important;
-            }
-            .shop-icon { width: 23px !important; height: 23px !important; margin-bottom: 1px !important; }
-            .shop-name { font-size: 8px !important; margin-bottom: 1px !important; }
-            .shop-cost { font-size: 8px !important; margin-bottom: 1px !important; }
-            .shop-stats { font-size: 6px !important; line-height: 1.15 !important; }
-            #shop { gap: 4px !important; }
-
-            #tower-panel {
-                top: 80px !important;
-                bottom: auto !important;
-                left: 50% !important;
-                transform: translateX(-50%) !important;
-                width: 240px !important;
-                padding: 10px !important;
-                font-size: 11px !important;
-                max-height: calc(100vh - 200px) !important;
-                overflow-y: auto;
-            }
-            .tp-title { font-size: 13px !important; }
-            .tp-stars { font-size: 12px !important; letter-spacing: 1px !important; margin-bottom: 4px !important; }
-            .tp-stats { font-size: 11px !important; line-height: 1.3 !important; margin-bottom: 6px !important; }
-            .tp-btn { font-size: 11px !important; padding: 6px !important; }
-
             .maps-box { padding: 16px 18px !important; max-height: 94vh !important; width: 94vw !important; }
             .maps-title { font-size: 20px !important; letter-spacing: 2px !important; }
             .maps-subtitle { font-size: 11px !important; margin-bottom: 12px !important; }
@@ -208,54 +103,6 @@
         }
 
         @media (max-height: 500px) {
-            #hud {
-                column-gap: 1px !important;
-                top: 3px !important;
-                left: 3px !important;
-                right: 3px !important;
-            }
-            .hud-item {
-                font-size: clamp(6px, 1.1vw, 9px) !important;
-                padding: 1px 3px !important;
-                gap: 1px !important;
-            }
-            .hud-icon { font-size: clamp(6px, 1.1vw, 9px) !important; }
-            .hud-center-group { gap: 1px !important; }
-            .hud-center-group .hud-btn {
-                font-size: clamp(6px, 1.1vw, 9px) !important;
-                padding: 1px 3px !important;
-            }
-            .hud-speed-group { gap: 1px !important; }
-            .hud-speed-group .hud-btn {
-                font-size: clamp(6px, 1.1vw, 9px) !important;
-                padding: 1px 3px !important;
-            }
-
-            #shop {
-                bottom: 3px !important;
-                gap: 3px !important;
-                padding: 0 4px 2px 4px !important;
-            }
-            /* Магазин — уменьшен в 1.2 раза */
-            .shop-card { min-width: 43px !important; padding: 2px 2px !important; }
-            .shop-icon { width: 18px !important; height: 18px !important; }
-            .shop-name { font-size: 7px !important; }
-            .shop-cost { font-size: 7px !important; margin-bottom: 0 !important; }
-            .shop-stats { display: none !important; }
-
-            #tower-panel {
-                top: 70px !important;
-                bottom: auto !important;
-                width: 200px !important;
-                padding: 7px !important;
-                font-size: 10px !important;
-                max-height: calc(100vh - 140px) !important;
-            }
-            .tp-title { font-size: 11px !important; }
-            .tp-stars { font-size: 10px !important; margin-bottom: 3px !important; letter-spacing: 1px !important; }
-            .tp-stats { font-size: 10px !important; line-height: 1.25 !important; margin-bottom: 5px !important; }
-            .tp-btn { font-size: 10px !important; padding: 4px !important; margin-bottom: 3px !important; }
-
             .difficulty-box, .maps-box, .rules-box {
                 padding: 12px 14px !important;
                 max-height: 94vh !important;
@@ -371,34 +218,42 @@
     <div id="game-container"></div>
     <div id="fatal-error"></div>
 
-    <svg id="pointer-svg">
-        <line id="tower-pointer" x1="0" y1="0" x2="0" y2="0" />
-    </svg>
+    <svg class="ui-symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></symbol><symbol id="icon-map" viewBox="0 0 24 24"><path d="m9 4-6 3v14l6-3 6 3 6-3V4l-6 3-6-3Zm0 0v14m6-11v14"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></symbol><symbol id="icon-book" viewBox="0 0 24 24"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15"/></symbol><symbol id="icon-restart" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></symbol><symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></symbol><symbol id="icon-volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol><symbol id="icon-muted" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm5 5 6 6m0-6-6 6"/></symbol><symbol id="icon-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9"/></symbol><symbol id="icon-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/></symbol></defs></svg>
+    <div id="base-health" role="status" aria-label="Здоровье базы: 20"><span class="base-health-value">20</span></div>
 
-    <div id="hud">
-        <div class="hud-item" id="hud-hp"><span class="hud-icon">❤</span> <span class="hud-val">20</span>/<span class="hud-max">20</span></div>
-        <div class="hud-item" id="hud-coins"><span class="hud-icon">💰</span> <span class="hud-val">200</span></div>
-        <div class="hud-item" id="hud-wave"><span class="hud-icon">🌊</span> Волна <span class="hud-val">0</span>/<span class="hud-max">20</span></div>
-        <div class="hud-item" id="hud-timer"><span class="hud-icon">⏱</span> <span class="hud-val">--</span></div>
-
-        <div class="hud-center-group">
-            <button class="hud-btn" id="hud-menu">🏠 Меню</button>
-            <button class="hud-btn" id="hud-maps">🗺️ Карты</button>
-            <button class="hud-btn" id="hud-difficulty">⚙️ Сложность</button>
-            <button class="hud-btn" id="hud-rules">📜 Правила</button>
-            <button class="hud-btn" id="hud-restart">🔄 Рестарт</button>
+    <header id="hud">
+        <div class="hud-navigation">
+            <span class="map-caption">Последний Бастион</span>
+            <nav class="hud-center-group" aria-label="Управление игрой">
+                <button class="hud-btn" id="hud-menu" title="Выйти в главное меню"><svg class="ui-icon" aria-hidden="true"><use href="#icon-home"></use></svg><span>Меню</span></button>
+                <button class="hud-btn" id="hud-maps"><svg class="ui-icon" aria-hidden="true"><use href="#icon-map"></use></svg><span>Карты</span></button>
+                <details class="hud-settings" id="hud-settings">
+                    <summary class="hud-btn" title="Настройки игры" aria-label="Настройки игры"><svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"></use></svg></summary>
+                    <div class="hud-settings-menu">
+                        <button class="hud-btn" id="hud-difficulty"><svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"></use></svg><span>Сложность</span></button>
+                        <button class="hud-btn" id="hud-rules"><svg class="ui-icon" aria-hidden="true"><use href="#icon-book"></use></svg><span>Правила</span></button>
+                        <button class="hud-btn" id="hud-restart"><svg class="ui-icon" aria-hidden="true"><use href="#icon-restart"></use></svg><span>Начать заново</span></button>
+                    </div>
+                </details>
+            </nav>
         </div>
-
-        <div class="hud-speed-group">
-            <button class="hud-btn speed-btn" data-speed="1">×1</button>
-            <button class="hud-btn speed-btn" data-speed="2">×2</button>
-            <button class="hud-btn speed-btn" data-speed="5">×5</button>
-            <button class="hud-btn" id="hud-pause">⏸</button>
-            <button class="hud-btn" id="hud-audio">🔊</button>
+        <div id="hud-wave" role="status" aria-label="Текущая волна"><span class="wave-label">Волна</span><span class="hud-val">0</span><span class="wave-divider">/</span><span class="hud-max">20</span></div>
+        <div class="hud-speed-group" role="group" aria-label="Скорость и пауза">
+            <button class="hud-btn speed-btn" data-speed="1" aria-label="Обычная скорость" aria-pressed="true">1×</button>
+            <button class="hud-btn speed-btn" data-speed="2" aria-label="Двойная скорость" aria-pressed="false">2×</button>
+            <button class="hud-btn speed-btn" data-speed="5" aria-label="Пятикратная скорость" aria-pressed="false">5×</button>
+            <button class="hud-btn icon-btn" id="hud-pause" title="Пауза · Пробел" aria-label="Приостановить игру"><svg class="ui-icon" aria-hidden="true"><use href="#icon-pause"></use></svg></button>
+            <button class="hud-btn icon-btn" id="hud-audio" title="Звук" aria-label="Выключить звук"><svg class="ui-icon" aria-hidden="true"><use href="#icon-volume"></use></svg></button>
         </div>
-    </div>
+    </header>
 
-    <div id="shop"></div>
+    <section id="shop-dock" aria-label="Покупка башен">
+        <div id="hud-coins" role="status" aria-label="Монеты">
+            <span class="treasury-label">Казна</span>
+            <span class="treasury-balance"><svg class="ui-icon" aria-hidden="true"><use href="#icon-coin"></use></svg><span class="hud-val">200</span></span>
+        </div>
+        <div id="shop" role="group" aria-label="Доступные башни"></div>
+    </section>
     <div id="tower-panel" class="hidden"></div>
 
     <div id="end-overlay" class="hidden">
