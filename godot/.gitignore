@@ -1,0 +1,4 @@
+.godot/
+build/
+tools/node_modules/
+export_credentials.cfg
