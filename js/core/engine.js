@@ -48,14 +48,8 @@ function _updateDifficultyButton() {
     const btn = _diffBtnEl();
     if (!btn) return;
     const preset = GameState.difficulty;
-    if (preset) {
-        btn.textContent = `${preset.icon} ${preset.name}`;
-        btn.style.borderColor = preset.color;
-        btn.style.color = preset.color;
-        btn.style.boxShadow = `0 0 12px ${preset.color}66`;
-    } else {
-        btn.textContent = '⚙️ Сложность';
-    }
+    const label = btn.querySelector('span');
+    label.textContent = preset ? `Сложность · ${preset.name}` : 'Сложность';
 }
 
 function openDifficultyModal(forceSelect) {
@@ -292,9 +286,14 @@ function setupPostProcessing() {
 function fitCameraToField() {
     const W = window.innerWidth, H = window.innerHeight;
     const padding = 0.98;
+    const hud = document.getElementById('hud');
+    const dock = document.getElementById('shop-dock');
+    const topInset = hud ? hud.getBoundingClientRect().bottom + 10 : 16;
+    const bottomInset = dock ? H - dock.getBoundingClientRect().top + 18 : 16;
+    const usableHeight = Math.max(H * 0.35, H - topInset - bottomInset);
     const tanHalfFov = Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV) / 2);
     const tanEffX = tanHalfFov * (W / H);
-    const tanEffY = tanHalfFov;
+    const tanEffY = tanHalfFov * usableHeight / H;
     const forward = new THREE.Vector3(0, -Math.cos(CAMERA_TILT), -Math.sin(CAMERA_TILT)).normalize();
     const right = new THREE.Vector3(1, 0, 0);
     const screenUp = new THREE.Vector3().crossVectors(right, forward).normalize();
@@ -303,6 +302,15 @@ function fitCameraToField() {
         for (const sz of [-PLAY_D/2, PLAY_D/2])
             for (const sy of [0, PLAY_TOP_Y])
                 corners.push(new THREE.Vector3(sx, sy, sz));
+    // Include every playable spot: Ice extends beyond the nominal floor bounds.
+    if (currentMap) {
+        for (const p of [...currentMap.waypoints, ...currentMap.towerSpots]) {
+            corners.push(new THREE.Vector3(p.x, PLAY_TOP_Y, p.z));
+        }
+        for (const p of [currentMap.waypoints[0], currentMap.waypoints[currentMap.waypoints.length - 1]]) {
+            corners.push(new THREE.Vector3(p.x, 18, p.z));
+        }
+    }
     let maxDist = 0;
     for (const c of corners) {
         const z = c.dot(forward), x = c.dot(right), y = c.dot(screenUp);
@@ -318,9 +326,12 @@ function fitCameraToField() {
         scene.fog.far  = Math.max(180, dist * 2.3);
     }
 
+    // Centre the battlefield in the space between navigation and the shop.
+    camera.setViewOffset(W, H, 0, (bottomInset - topInset) / 2, W, H);
     camera.position.copy(forward).multiplyScalar(-dist);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
+    if (typeof updateBaseHealthPosition === 'function') updateBaseHealthPosition();
 }
 
 function createFloor() {
@@ -430,7 +441,6 @@ function animate() {
         if (typeof updatePath === 'function') updatePath(gameDelta, GameState.gameTime);
         if (typeof updateTowerSpots === 'function') updateTowerSpots(gameDelta, GameState.gameTime);
         if (typeof updateDecor === 'function') updateDecor(rawDelta);
-        if (typeof updateTowerPanelPosition === 'function') updateTowerPanelPosition();
         if (gameDelta > 0) {
             if (typeof updateWave === 'function') updateWave(gameDelta);
             if (typeof updateEnemies === 'function') updateEnemies(gameDelta);

@@ -6,8 +6,10 @@ function initShop() {
 
     for (const typeId of AVAILABLE_TOWERS) {
         const data = TOWERS_DATA[typeId];
-        const card = document.createElement('div');
+        const card = document.createElement('button');
+        card.type = 'button';
         card.className = 'shop-card';
+        card.setAttribute('aria-pressed', 'false');
         card.dataset.typeId = typeId;
 
         const stats = getTowerStatsForLevel(typeId, 1);
@@ -16,12 +18,13 @@ function initShop() {
             : (stats.buffPercent ? `+${stats.buffPercent}% урона` : '—');
         const rangeLabel = `Дальн.: ${stats.range.toFixed(1)}м`;
         const iconUrl = generateTowerIcon(typeId, 1);
+        card.setAttribute('aria-label', `${data.name}, ${data.baseCost} монет. ${dmgLabel}. ${rangeLabel}`);
 
         card.innerHTML = `
-            <img class="shop-icon" src="${iconUrl}" alt="${data.name}">
-            <div class="shop-name">${data.name}</div>
-            <div class="shop-cost">💰 ${data.baseCost}</div>
-            <div class="shop-stats">${dmgLabel}<br>${rangeLabel}</div>
+            <img class="shop-icon" src="${iconUrl}" alt="">
+            <span class="shop-name">${data.name}</span>
+            <span class="shop-cost">${data.baseCost}</span>
+            <span class="shop-details">${dmgLabel}<br>${rangeLabel}</span>
         `;
 
         card.addEventListener('click', () => {
@@ -46,7 +49,8 @@ function refreshShop() {
         const typeId = card.dataset.typeId;
         const cost = TOWERS_DATA[typeId].baseCost;
         const canAfford = GameState.coins >= cost;
-        card.classList.toggle('disabled', !canAfford);
+        card.disabled = !canAfford;
         card.classList.toggle('selected', buildingType === typeId);
+        card.setAttribute('aria-pressed', String(buildingType === typeId));
     }
 }
