@@ -36,6 +36,7 @@ var speed_slider: HSlider
 var speed_value: Label
 var tactical_button: Button
 var _hud_visibility: Dictionary = {}
+var _spatial_overlay_visibility: Dictionary = {}
 var _pause_menu_open = false
 var _return_to_pause = false
 var shop_buttons: Dictionary = {}
@@ -304,12 +305,19 @@ func _dialog(title: String, width: float = 600.0) -> VBoxContainer:
 	return rows
 
 func _hide_game_hud() -> void:
+	for overlay in [range_mesh, ghost] + spot_nodes:
+		if is_instance_valid(overlay):
+			_spatial_overlay_visibility[overlay] = overlay.visible
+			overlay.hide()
 	for child in ui.get_children():
 		if child != dialog_layer and child is CanvasItem:
 			_hud_visibility[child] = child.visible
 			child.hide()
 
 func _restore_game_hud() -> void:
+	for overlay in _spatial_overlay_visibility:
+		if is_instance_valid(overlay): overlay.visible = _spatial_overlay_visibility[overlay]
+	_spatial_overlay_visibility.clear()
 	for child in _hud_visibility:
 		if is_instance_valid(child): child.visible = _hud_visibility[child]
 	_hud_visibility.clear()
@@ -324,6 +332,7 @@ func _close_dialog() -> void:
 		_active_dialog = null
 		if sim != null:
 			sim.paused = _dialog_pause
+			_refresh()
 
 func _show_maps() -> void:
 	var rows = _dialog("ВЫБОР КАРТЫ", 880)
