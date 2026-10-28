@@ -46,12 +46,23 @@ func setup(id: String, difficulty_id: String) -> void:
 	for item in map.spots:
 		spots.append({"position": Data.vector(item.position), "restricted_to": item.restricted_to, "tower": null})
 
+# Road half-width 1.75, terrace radius 1.4, with a safety gap.
+func can_build_at(index: int) -> bool:
+	if index < 0 or index >= spots.size(): return false
+	var p = Vector2(spots[index].position.x, spots[index].position.z)
+	for i in range(waypoints.size() - 1):
+		var a = Vector2(waypoints[i].x, waypoints[i].z)
+		var b = Vector2(waypoints[i+1].x, waypoints[i+1].z)
+		if p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b)) < 3.4:
+			return false
+	return true
+
 func build(type: String, index: int) -> Dictionary:
 	if phase in ["win", "lose"] or not Data.all().towers.has(type) or index < 0 or index >= spots.size():
 		return {}
 	var spot = spots[index]
 	var restricted = spot.restricted_to
-	if spot.tower != null or (restricted != "" and restricted != type) or (restricted == "" and type == "sniper"):
+	if not can_build_at(index) or spot.tower != null or (restricted != "" and restricted != type) or (restricted == "" and type == "sniper"):
 		return {}
 	var cost = int(Data.all().towers[type].baseCost)
 	if coins < cost:

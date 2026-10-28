@@ -147,8 +147,12 @@ func render(delta: float,interpolation: float=1.0) -> void:
 func _line(start: Vector3,end: Vector3,width: float,color: Color) -> void:
  var direction=end-start
  if direction.length_squared()<.00001:return
- var basis=Basis(Quaternion(Vector3.UP,direction.normalized())).scaled(Vector3(width,direction.length(),width))
- _draw("line",Transform3D(basis,(start+end)*.5),color)
+ _draw("line",_line_transform(start,end,width),color)
+
+func _line_transform(start: Vector3,end: Vector3,width: float) -> Transform3D:
+ var direction=end-start
+ var basis=Basis(Quaternion(Vector3.UP,direction.normalized())) * Basis.from_scale(Vector3(width,direction.length(),width))
+ return Transform3D(basis,(start+end)*.5)
 
 func _draw(kind: String,transform: Transform3D,color: Color) -> void:
  var batch=batches[kind]

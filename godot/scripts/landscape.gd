@@ -19,11 +19,17 @@ func configure(scene: Node3D, id: String) -> void:
     ground.set_shader_parameter("winter",id=="ice")
     part.set_surface_override_material(index,ground)
     continue
+   if "old road stones" in key:
+    var paving=ShaderMaterial.new()
+    paving.shader=preload("res://shaders/road.gdshader")
+    paving.set_shader_parameter("winter",id=="ice")
+    part.set_surface_override_material(index,paving)
+    continue
    var mode = 0 if "bay water" in key else 1 if "waterfall" in key else 2 if "living lava" in key else -1
    if mode < 0: continue
    if not _materials.has(mode):
     var water = ShaderMaterial.new()
-    water.shader = preload("res://shaders/landscape.gdshader")
+    water.shader = preload("res://shaders/waterfall.gdshader") if mode==1 else preload("res://shaders/landscape.gdshader")
     water.set_shader_parameter("mode",mode)
     _materials[mode] = water
    part.set_surface_override_material(index,_materials[mode])

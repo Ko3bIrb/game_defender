@@ -151,6 +151,7 @@ func _theme() -> Theme:
 func _button(text: String, callback: Callable, parent: Node, minimum: Vector2 = Vector2(0, 40)) -> Button:
 	var button = Button.new()
 	button.text = text
+	button.focus_mode = Control.FOCUS_NONE
 	button.custom_minimum_size = minimum
 	button.pressed.connect(callback)
 	parent.add_child(button)
@@ -256,6 +257,7 @@ func _menu_contents(rows: VBoxContainer, paused: bool) -> void:
 	var audio = _button("Звук: " + ("включён" if sound.enabled else "выключен"), func(): _toggle_audio(), rows, Vector2(355, 46))
 	audio.pressed.connect(func(): audio.text = "Звук: " + ("включён" if sound.enabled else "выключен"))
 	if paused:
+		_button("Начать заново", func(): _open_menu_dialog(_confirm_restart, true), rows, Vector2(355, 46))
 		_button("В главное меню", func(): _open_menu_dialog(_confirm_exit, true), rows, Vector2(355, 46))
 	_button("Выйти из игры", _quit_game, rows, Vector2(355, 46))
 	if paused:
@@ -380,7 +382,7 @@ func _show_rules() -> void:
 	var content = VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(content)
-	var intro = _label("Отбейте 20 волн. Враги, дошедшие до крепости, отнимают здоровье.\nВыберите башню внизу и свободную площадку на карте.\nСнайпер строится только на специальных синих площадках.\nEsc — меню · Пробел — тактическая пауза для строительства.\nПолзунок ТЕМП — от 0.25× до 5×.\nПодготовка следующей волны начинается автоматически.", content, 15)
+	var intro = _label("Отбейте 20 волн. Враги, дошедшие до крепости, отнимают здоровье.\nВыберите башню внизу и свободную площадку на карте.\nСнайпер строится только на специальных синих площадках.\nEsc — меню · Пробел — тактическая пауза для строительства.\nПолзунок ТЕМП — от 0.25× до 5×; стрелки меняют темп.\nРестарт — начать текущую карту заново.\nПодготовка следующей волны начинается автоматически.", content, 15)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for type in TYPES:
 		var data = Data.all().towers[type]
@@ -615,6 +617,7 @@ func _build_hud() -> void:
 	var nav = HBoxContainer.new()
 	nav_panel.add_child(nav)
 	_button("Меню · Esc", _show_pause_menu, nav)
+	_button("Рестарт", _confirm_restart, nav)
 	_button("Карты", _show_maps, nav)
 	_button("Правила", _show_rules, nav)
 	_button("Сложность", func(): _choose_difficulty(sim.map_id), nav)
@@ -628,6 +631,7 @@ func _build_hud() -> void:
 	speed_value = _label("ТЕМП  ·  1.00×", tempo, 11)
 	speed_value.modulate = muted
 	speed_slider = HSlider.new()
+	speed_slider.focus_mode = Control.FOCUS_NONE
 	speed_slider.custom_minimum_size = Vector2(220, 30)
 	speed_slider.min_value = 0.25
 	speed_slider.max_value = 5.0
@@ -690,6 +694,15 @@ func _toggle_tactical_pause() -> void:
 		return
 	sim.paused = not sim.paused
 	_refresh()
+
+func _confirm_restart() -> void:
+	if sim == null or _loading: return
+	var id = sim.map_id
+	var difficulty_id = save_store.data.difficulty[id]
+	var rows = _dialog("Начать карту заново?", 500)
+	_label("Волны, казна и башни начнутся с исходного состояния.", rows)
+	_button("Отмена", _back_dialog, rows)
+	_button("Начать заново", func(): start_game(id, difficulty_id), rows)
 
 func _confirm_exit() -> void:
 	var rows = _dialog("Выйти в меню?", 500)
@@ -779,7 +792,7 @@ func _fit_camera() -> void:
 		corners.append(point + Vector3.UP * 2.0)
 	for spot in sim.spots:
 		corners.append(spot.position + Vector3.UP * 2.0)
-	corners.append(sim.waypoints[0] + Vector3.UP * 18)
+	corners.append(sim.waypoints[0] + Vector3(-15,22,-7))
 	corners.append(sim.waypoints[-1] + Vector3.UP * 18)
 	var distance = 20.0
 	for point in corners:
@@ -921,7 +934,7 @@ func _transparency(node: Node, value: float) -> void:
 
 func _spot_allows(index: int, type: String) -> bool:
 	var spot = sim.spots[index]
-	return spot.tower == null and ((spot.restricted_to == "" and type != "sniper") or spot.restricted_to == type)
+	return sim.can_build_at(index) and spot.tower == null and ((spot.restricted_to == "" and type != "sniper") or spot.restricted_to == type)
 
 func _floor_point(screen: Vector2):
 	return Plane(Vector3.UP, 0).intersects_ray(camera.project_ray_origin(screen), camera.project_ray_normal(screen))
@@ -1018,10 +1031,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_gesture_moved = true
 		_pointer_move(event.position)
 
-func _unhandled_key_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if _loading: return
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
+	if event.keycode in [KEY_ESCAPE, KEY_SPACE, KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+		get_viewport().set_input_as_handled()
 	if event.keycode == KEY_ESCAPE:
 		if _active_dialog != null:
 			_back_dialog()
@@ -1030,6 +1045,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if event.keycode == KEY_SPACE:
 		_toggle_tactical_pause()
+	elif event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN] and sim != null and _active_dialog == null:
+		speed_slider.value += .25 if event.keycode in [KEY_RIGHT, KEY_UP] else -.25
 
 func _ghost_style(node: Node) -> void:
 	if node is MeshInstance3D: node.material_override = _ghost_material
@@ -1129,7 +1146,7 @@ func _process(delta: float) -> void:
 			var direction = sim.waypoints[enemy.path_index + 1] - sim.waypoints[enemy.path_index]
 			entry.node.rotation = Vector3(cos(phase * 2) * data.walk.get("leanAmp", 0.02), atan2(direction.x, direction.z), sin(phase) * data.walk.swayAmp * data.size)
 			var body_height = 1.9 if enemy.type == "hound" else 1.75 if "ballista" in enemy.type else 3.4
-			entry.bar.position = visual_position + Vector3.UP * (body_height * data.size + 0.45 + (enemy.base_y - data.size * 0.35 if data.flying else 0.0))
+			entry.bar.position = visual_position + Vector3.UP * (body_height * data.size * data.get("visualScale",1.0) + 0.45 + (enemy.base_y - data.size * 0.35 if data.flying else 0.0))
 			entry.bar.quaternion = camera.quaternion
 			var ratio = clampf(enemy.hp / enemy.max_hp, 0.001, 1.0)
 			entry.fill.scale.x = ratio

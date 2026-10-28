@@ -7,10 +7,13 @@ float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);return mix
 void vertex(){world=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;if(mode==0){VERTEX.y+=sin(world.x*1.6+TIME*.7)*.025+cos(world.z*1.2-TIME*.5)*.018;}}
 void fragment(){
  if(mode==2){
-  vec2 p=world.xz*.48;float n=noise(p+vec2(TIME*.04,0.0));float veins=pow(1.0-abs(sin(p.x*2.0+noise(p*1.4)*5.0+p.y)),5.0);
-  float heat=smoothstep(.30,.70,n)*.6+veins*.7;
-  ALBEDO=mix(vec3(.045,.025,.028),vec3(.38,.055,.008),heat);
-  EMISSION=vec3(2.5,.36,.025)*heat;ROUGHNESS=.65;
+  vec2 p=world.xz*.19;
+  vec2 flow=vec2(noise(p+vec2(TIME*.015,0.)),noise(p+vec2(13.7,-TIME*.012)));
+  float broad=noise(p+flow*2.5)*.62+noise(p*2.4+flow)*.26+noise(p*5.+flow)*.12;
+  float crust=smoothstep(.48,.69,noise(p*3.3+flow*1.7));
+  float heat=smoothstep(.26,.70,broad)*(1.-crust*.91);
+  ALBEDO=mix(vec3(.025,.012,.009),vec3(.33,.035,.002),heat);
+  EMISSION=vec3(2.8,.27,.008)*heat*heat;ROUGHNESS=mix(.94,.44,heat);
  } else if(mode==1){
   float stream=noise(vec2(world.x*4.,world.z*.6+TIME*4.0))+noise(vec2(world.x*9.,world.y*.3+TIME*5.0))*.5;
   ALBEDO=mix(vec3(.08,.25,.32),vec3(.73,.88,.9),smoothstep(.3,1.2,stream));

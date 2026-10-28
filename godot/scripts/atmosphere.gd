@@ -31,17 +31,17 @@ func configure(scene: Node3D, id: String) -> void:
  settings.background_mode = Environment.BG_SKY
  var sky = Sky.new()
  var sky_material = ProceduralSkyMaterial.new()
- sky_material.sky_top_color = Color("101e37") if winter else Color("101426")
- sky_material.sky_horizon_color = Color("3e4d68") if winter else Color("272738")
+ sky_material.sky_top_color = Color("101e37") if winter else Color("180d14")
+ sky_material.sky_horizon_color = Color("3e4d68") if winter else Color("5b261d")
  sky_material.ground_bottom_color = Color("101925")
  sky_material.ground_horizon_color = sky_material.sky_horizon_color
  sky_material.sky_curve = 0.20
  sky_material.sun_angle_max = 2.0
  sky.sky_material = sky_material
  settings.sky = sky
- settings.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
- settings.ambient_light_color = Color("8197b9")
- settings.ambient_light_energy = 0.30 if winter else 0.36
+ settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+ settings.ambient_light_color = Color("8197b9") if winter else Color("bd5731")
+ settings.ambient_light_energy = 0.30 if winter else 0.24
  settings.reflected_light_source = 1
  settings.tonemap_mode = Environment.TONE_MAPPER_AGX
  settings.tonemap_exposure = 0.95
@@ -55,19 +55,19 @@ func configure(scene: Node3D, id: String) -> void:
  settings.glow_bloom = 0.03
  settings.glow_hdr_threshold = 1.5
  settings.fog_enabled = true
- settings.fog_light_color = Color("465c7b") if winter else Color("343347")
+ settings.fog_light_color = Color("465c7b") if winter else Color("63301c")
  settings.fog_density = 0.0009 if not _menu else 0.007
  settings.fog_sun_scatter = 0.12
  settings.volumetric_fog_enabled = true
  settings.volumetric_fog_density = 0.006 if _menu else 0.0008
- settings.volumetric_fog_albedo = Color("b6c4d2") if winter else Color("5e6178")
+ settings.volumetric_fog_albedo = Color("b6c4d2") if winter else Color("9c4a27")
  settings.volumetric_fog_sky_affect = 0.3
  environment.environment = settings
  scene.add_child(environment)
  var moon = DirectionalLight3D.new()
  moon.name = "Moonlight"
- moon.light_color = Color("bfd6f3") if winter else Color("a7b9e5")
- moon.light_energy = 0.46 if winter else 0.62
+ moon.light_color = Color("bfd6f3") if winter else Color("e78c54")
+ moon.light_energy = 0.46 if winter else 0.34
  moon.rotation_degrees = Vector3(-38, -32, 0)
  moon.shadow_enabled = true
  moon.light_angular_distance = 2.0
@@ -76,7 +76,7 @@ func configure(scene: Node3D, id: String) -> void:
  scene.add_child(moon)
  var rim = DirectionalLight3D.new()
  rim.rotation_degrees = Vector3(-23, 145, 0)
- rim.light_color = Color("d4ad92") if winter else Color("a895b7")
+ rim.light_color = Color("d4ad92") if winter else Color("ee4822")
  rim.light_energy = 0.14
  scene.add_child(rim)
  if _menu:
@@ -94,8 +94,9 @@ func configure(scene: Node3D, id: String) -> void:
    _light(scene,Vector3(p[0],p[1],p[2]),Color("ffca8b"),3.2,10,i%4==0)
   for p in scenery.get("homes",[]):
    _light(scene,Vector3(p[0],p[1],p[2]),Color("ffd39a"),1.8,7)
-  for p in scenery.fires:
-   _light(scene,Vector3(p[0],p[1]+1,p[2]),Color("ff9b4c"),4.5,12,true)
+  for i in range(mini(14,scenery.fires.size())):
+   var p=scenery.fires[i]
+   _light(scene,Vector3(p[0],p[1]+1,p[2]),Color("ff9b4c"),4.5,12,i<4)
   if winter:
    _light(scene,Vector3(0,2,-25),Color("6eabbc"),2.5,23)
    settings.ssr_enabled = true
@@ -122,14 +123,14 @@ func _snow(scene: Node3D, winter: bool) -> void:
  var process = ParticleProcessMaterial.new()
  process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
  process.emission_box_extents = Vector3(22,12,22) if _menu else Vector3(90,16,55)
- process.direction = Vector3(0.2,-1,0.12)
+ process.direction = Vector3(0.2,-1,0.12) if winter else Vector3(.12,1,.07)
  process.spread = 18
- process.gravity = Vector3(0,-0.02,0)
+ process.gravity = Vector3(0,-0.02,0) if winter else Vector3(0,.015,0)
  process.initial_velocity_min = 0.6 if winter else 0.15
  process.initial_velocity_max = 1.1 if winter else 0.35
  process.scale_min = 0.015 if _menu else 0.025
- process.scale_max = 0.045 if _menu else 0.07
- process.color = Color("bfccd6") if winter else Color("cf986c")
+ process.scale_max = 0.045 if _menu else .07 if winter else .035
+ process.color = Color("bfccd6") if winter else Color("ff6f18")
  particles.process_material = process
  particles.position.y = 12
  var quad = QuadMesh.new()
@@ -140,7 +141,7 @@ func _snow(scene: Node3D, winter: bool) -> void:
  material.vertex_color_use_as_albedo = true
  material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
  material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
- material.albedo_color = Color(1,1,1,0.55)
+ material.albedo_color = Color(1,1,1,0.55) if winter else Color(1,.32,.04,.65)
  # Rounded flakes with soft, transparent edges.
  var image = Image.create(32,32,false,Image.FORMAT_RGBA8)
  for y in range(32):

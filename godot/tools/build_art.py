@@ -507,7 +507,7 @@ def ballista(ice):
   for i in range(6):crystal((random.uniform(-.5,.5),.7,random.uniform(-.7,.7)),.25,FROST)
 
 def enemy(kind,d):
- size=d['size'];base=max(.6,size*.75) if not d['flying'] else size*.35
+ size=d['size']*d.get('visualScale',1.0);base=max(.6,d['size']*.75) if not d['flying'] else d['size']*.35
  start(size,(0,-base,0));ice=kind in DATA['maps']['ice']['enemies']
  if 'ballista' in kind:ballista(ice)
  elif kind=='hound':hound()

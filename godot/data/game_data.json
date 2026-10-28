@@ -291,7 +291,8 @@
             "bobAmp": 0.07,
             "swayAmp": 0.09,
             "leanAmp": 0.05
-          }
+          },
+          "visualScale": 0.64
         },
         "knight": {
           "name": "Огненный рыцарь",
@@ -309,7 +310,8 @@
             "bobAmp": 0.05,
             "swayAmp": 0.05,
             "leanAmp": 0.04
-          }
+          },
+          "visualScale": 0.66
         },
         "soul_eater": {
           "name": "Пожиратель Душ",
@@ -336,7 +338,8 @@
             "bobAmp": 0.04,
             "swayAmp": 0.03,
             "leanAmp": 0.02
-          }
+          },
+          "visualScale": 0.66
         },
         "hound": {
           "name": "Адская гончая",
@@ -359,7 +362,8 @@
             "bobAmp": 0.05,
             "swayAmp": 0.11,
             "leanAmp": 0.08
-          }
+          },
+          "visualScale": 0.78
         },
         "succubus": {
           "name": "Суккуб",
@@ -381,7 +385,8 @@
             "bobAmp": 0.07,
             "swayAmp": 0.08,
             "leanAmp": 0.03
-          }
+          },
+          "visualScale": 0.64
         },
         "ballista": {
           "name": "Баллиста",
@@ -404,7 +409,8 @@
             "bobAmp": 0.03,
             "swayAmp": 0.03,
             "leanAmp": 0.02
-          }
+          },
+          "visualScale": 0.76
         },
         "baron": {
           "name": "Барон Преисподней",
@@ -429,7 +435,8 @@
             "bobAmp": 0.07,
             "swayAmp": 0.05,
             "leanAmp": 0.04
-          }
+          },
+          "visualScale": 0.76
         },
         "trumpeter": {
           "name": "Иерихонский Трубач",
@@ -453,7 +460,8 @@
             "bobAmp": 0.06,
             "swayAmp": 0.06,
             "leanAmp": 0.03
-          }
+          },
+          "visualScale": 0.72
         },
         "spire": {
           "name": "Дьявольский Шпиль",
@@ -478,7 +486,8 @@
             "bobAmp": 0.03,
             "swayAmp": 0.02,
             "leanAmp": 0.015
-          }
+          },
+          "visualScale": 0.85
         },
         "colossus": {
           "name": "Гееннский Колосс",
@@ -508,7 +517,8 @@
             "bobAmp": 0.1,
             "swayAmp": 0.06,
             "leanAmp": 0.06
-          }
+          },
+          "visualScale": 0.82
         }
       },
       "waves": [
@@ -965,17 +975,17 @@
         },
         {
           "position": [
-            -17,
+            -21,
             0,
-            -30
+            -28
           ],
           "restricted_to": ""
         },
         {
           "position": [
-            17,
+            21,
             0,
-            -30
+            -28
           ],
           "restricted_to": ""
         },
@@ -1060,7 +1070,8 @@
             "bobAmp": 0.07,
             "swayAmp": 0.09,
             "leanAmp": 0.05
-          }
+          },
+          "visualScale": 0.46
         },
         "ice_golem": {
           "name": "Ледяной Голем",
@@ -1081,7 +1092,8 @@
             "bobAmp": 0.08,
             "swayAmp": 0.04,
             "leanAmp": 0.04
-          }
+          },
+          "visualScale": 0.85
         },
         "snow_witch": {
           "name": "Снежная Ведьма",
@@ -1107,7 +1119,8 @@
             "bobAmp": 0.05,
             "swayAmp": 0.05,
             "leanAmp": 0.03
-          }
+          },
+          "visualScale": 0.61
         },
         "ice_knight": {
           "name": "Ледяной Рыцарь",
@@ -1124,7 +1137,8 @@
             "bobAmp": 0.05,
             "swayAmp": 0.05,
             "leanAmp": 0.04
-          }
+          },
+          "visualScale": 0.64
         },
         "blizzard_spirit": {
           "name": "Метель-Дух",
@@ -1141,7 +1155,8 @@
             "bobAmp": 0.1,
             "swayAmp": 0.12,
             "leanAmp": 0.02
-          }
+          },
+          "visualScale": 0.65
         },
         "ice_harpy": {
           "name": "Ледяная Гарпия",
@@ -1163,7 +1178,8 @@
             "bobAmp": 0.08,
             "swayAmp": 0.1,
             "leanAmp": 0.04
-          }
+          },
+          "visualScale": 0.75
         },
         "ice_ballista": {
           "name": "Ледяная Баллиста",
@@ -1185,7 +1201,8 @@
             "bobAmp": 0.03,
             "swayAmp": 0.03,
             "leanAmp": 0.02
-          }
+          },
+          "visualScale": 0.76
         },
         "blizzard_lord": {
           "name": "Повелитель Метели",
@@ -1208,7 +1225,8 @@
             "bobAmp": 0.08,
             "swayAmp": 0.06,
             "leanAmp": 0.03
-          }
+          },
+          "visualScale": 0.74
         },
         "frost_guardian": {
           "name": "Хранитель Мерзлоты",
@@ -1232,7 +1250,8 @@
             "bobAmp": 0.06,
             "swayAmp": 0.03,
             "leanAmp": 0.03
-          }
+          },
+          "visualScale": 0.8
         },
         "snow_devourer": {
           "name": "Снежный Пожиратель",
@@ -1256,7 +1275,8 @@
             "bobAmp": 0.08,
             "swayAmp": 0.08,
             "leanAmp": 0.05
-          }
+          },
+          "visualScale": 0.78
         }
       },
       "waves": [

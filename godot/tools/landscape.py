@@ -20,8 +20,8 @@ def build_landscape(c,mapid):
  water=c['material']('Bay water','16485d',.28,.15,0,False)
  cascade=c['material']('Waterfall','7da5b7',.1,.22,0,False)
  magma=c['material']('Living lava','db4310',0,.65,1.2,False)
- terrainmat=c['material']('Mountain ground','71808a' if ice else '37313a',.03,.9)
- roadmat=c['material']('Old road stones','657074' if ice else '5a4e48',.02,.9)
+ terrainmat=c['material']('Mountain ground','71808a' if ice else '24130f',.03,.9)
+ roadmat=c['material']('Old road stones','58616a' if ice else '31251d',.02,.9)
  slate=c['material']('Wet cliff stone','3b5362' if ice else '3d3238',.13,.7)
  meta={'instances':[],'fires':[],'mist':[],'waterfall':ice,'landmarks':[]}
  if ice:
@@ -38,7 +38,7 @@ def build_landscape(c,mapid):
   center=(-4+2.0*math.sin(z*.15)) if not ice else .4*math.sin(z*.3)
   return abs(x-center)
  def height(x,z):
-  h=-.4+.6*math.sin(x*.105+math.sin(z*.08))+.45*math.cos(z*.13+x*.045)
+  h=(.25 if ice else -4.6)+1.2*math.sin(x*.105+math.sin(z*.08))+.7*math.cos(z*.13+x*.045)
   for px,pz,hh,rx,rz in peaks:
    q=((x-px)/rx)**2+((z-pz)/rz)**2
    ridge=1+.05*math.sin(x*.43+z*.19)+.03*math.sin(z*.58-x*.27)
@@ -59,7 +59,7 @@ def build_landscape(c,mapid):
   return h*(1-safe)
  meta['landmarks']=['central bay','mountain waterfall','shore road','outlet bridge','fishing hamlet','watch camp'] if ice else ['volcano','lava basin','lava river','dragon ribs','broken gate','fortress causeway']
  # Continuous asymmetric massifs with exposed cliffs and windblown snow.
- n,m=161,113;verts=[];faces_by={};minx,maxx,minz,maxz=-105,105,-89,60
+ n,m=193,137;verts=[];faces_by={};minx,maxx,minz,maxz=-105,105,-89,60
  for j in range(m):
   z=minz+j*(maxz-minz)/(m-1)
   for i in range(n):
@@ -71,51 +71,79 @@ def build_landscape(c,mapid):
  mesh('Carved landscape',verts,terrain_faces,terrainmat,smooth=True)
  # Visible water/lava basins. Holes retain the sniper islands and shore ledges.
  def basin_surface():
-  vv=[];ff=[];nx,nz=65,121
+  vv=[];ff=[];nx,nz=(65,121) if ice else (151,121)
   for j in range(nz):
-   z=-43+j*67/(nz-1)
-   for i in range(nx):vv.append((-20+i*40/(nx-1),-1.05,z))
+   z=(-43+j*67/(nz-1)) if ice else (-78+j*133/(nz-1))
+   for i in range(nx):vv.append(((-20+i*40/(nx-1)) if ice else (-96+i*192/(nx-1)),-1.05,z))
   for j in range(nz-1):
    for i in range(nx-1):
     k=j*nx+i;ids=(k,k+nx,k+nx+1,k+1)
-    if min(bay(vv[v][0],vv[v][2]) for v in ids)<1.5:ff.append(ids)
+    if not ice or min(bay(vv[v][0],vv[v][2]) for v in ids)<1.5:ff.append(ids)
   mesh('Central bay' if ice else 'Molten basin',vv,ff,water if ice else magma,smooth=True)
  basin_surface()
- # Upstream waterfall or molten torrent connects the mountain to the basin.
- vv=[];ff=[]
- for i in range(81):
-  z=-47+i*(13 if ice else 36)/80;x=.4*math.sin(z*.3) if ice else -4+2*math.sin(z*.15)
-  width=1.5 if ice else 2.5+.6*math.sin(z*.7)
-  y=(-1+18*max(0,(-z-34)/13)**1.65) if ice else -1.05+max(0,(-z-25))*1.0
-  for side in [-1,1]:vv.append((x+side*width,y+.08,z))
- for i in range(80):ff.append((i*2,i*2+2,i*2+3,i*2+1))
- mesh('Mountain cascade' if ice else 'Molten torrent',vv,ff,cascade if ice else magma,smooth=True)
- if ice:meta['mist'].append([0,-.4,-33])
- # Original route becomes a deliberately constructed shore/causeway road.
- samples=[]
- for a,b in zip(route,route[1:]):
-  a,b=Vector(a),Vector(b);count=max(2,int((b-a).length/.72))
-  for j in range(count):samples.append(a.lerp(b,j/count))
- samples.append(Vector(route[-1]));vv=[]
+ # A stepped rock lip breaks the waterfall into several unequal falling streams.
+ if ice:
+  for strand,(cx,width,top,bottom,phase) in enumerate([(-1.2,1.05,-46.8,-33.2,.0),(.9,.7,-46.1,-32.4,1.5),(2.0,.38,-44.8,-33.8,3.2)]):
+   vv=[];ff=[];steps=74
+   for i in range(steps+1):
+    t=i/steps;z=top+(bottom-top)*t
+    x=cx+.28*math.sin(t*9+phase)+.18*math.sin(t*23+phase)
+    w=width*(.62+.25*math.sin(t*17+phase)+.45*t)
+    y=-.75+18*max(0,(-z-34)/13)**1.65
+    for j in range(5):
+     u=j/4;vv.append((x+(u*2-1)*w,y+.15+.12*math.sin(t*29+u*8+phase),z))
+   for i in range(steps):
+    for j in range(4):
+     k=i*5+j;ff.append((k,k+5,k+6,k+1))
+   c['emit']([tuple(c['V'](v)) for v in vv],ff,cascade,uv=[(j/4,i/steps) for i in range(steps+1) for j in range(5)],smooth=True)
+  meta['mist'] += [[-1,-.3,-33],[1,-.3,-33.8]]
+ else:
+  # Several molten tributaries crawl down the volcano instead of a straight stripe.
+  for offset,width in [(-1.2,1.4),(1.6,.8),(5.2,.5)]:
+   vv=[];ff=[]
+   for i in range(100):
+    z=-54+i*45/99;x=-8+offset+3.5*math.sin(z*.13)+1.1*math.sin(z*.4)
+    y=max(-.98,height(x,z)+.12)
+    w=width*(1+.3*math.sin(z))
+    vv.extend([(x-w,y,z),(x+w,y,z)])
+   for i in range(99):ff.append((i*2,i*2+2,i*2+3,i*2+1))
+   mesh('Volcanic tributary',vv,ff,magma,smooth=True)
+ # Rounded corners retain the original route within the walkable ribbon.
+ controls=[Vector(route[0])+Vector((-3,0,0))]+[Vector(v) for v in route]+[Vector(route[-1])+Vector((3,0,0))]
+ samples=[controls[0]]
+ def append_line(a,b):
+  for j in range(1,max(2,int((b-a).length/.55))+1):
+   samples.append(a.lerp(b,j/max(2,int((b-a).length/.55))))
+ for i in range(1,len(controls)-1):
+  a,b,d=controls[i-1:i+2];radius=min(1.6,(b-a).length*.25,(d-b).length*.25)
+  before=b+(a-b).normalized()*radius;after=b+(d-b).normalized()*radius
+  append_line(samples[-1],before)
+  for j in range(1,9):
+   t=j/8;samples.append(before*(1-t)**2+b*2*(1-t)*t+after*t*t)
+ append_line(samples[-1],controls[-1])
+ # Three strips provide a broken, slightly sunken edge and a crowned paving surface.
+ vv=[]
  for i,p in enumerate(samples):
-  t=(samples[min(i+1,len(samples)-1)]-samples[max(0,i-1)]).normalized();normal=Vector((-t.z,0,t.x))
-  w=1.75+.09*math.sin(i*.41)
-  vv.extend([p+normal*w+Vector((0,.075,0)),p-normal*w+Vector((0,.075,0))])
+  tangent=(samples[min(i+1,len(samples)-1)]-samples[max(0,i-1)]).normalized();normal=Vector((-tangent.z,0,tangent.x))
+  width=1.73+.12*math.sin(i*.61)+.06*math.sin(i*1.8)
+  for u in [-1,-.82,0,.82,1]:
+   vv.append(p+normal*width*u+Vector((0,.095-.065*abs(u),0)))
  ff=[]
  for i in range(len(samples)-1):
-  if ice and abs(samples[i].x)<5 and 13<samples[i].z<17:continue
-  ff.append((i*2,i*2+2,i*2+3,i*2+1))
- mesh('Military shore road',vv,ff,roadmat,smooth=True)
- for i in range(0,len(samples),7):
+  if ice and abs((samples[i].x+samples[i+1].x)*.5)<5.5 and 13<samples[i].z<17:continue
+  for j in range(4):
+   k=i*5+j;ff.append((k,k+5,k+6,k+1))
+ mesh('Worn connected causeway',vv,ff,roadmat,smooth=True)
+ for i in range(0,len(samples),6):
   p=samples[i]
-  if ice and abs(p.x)<5 and p.z>12:continue
-  t=(samples[min(i+1,len(samples)-1)]-samples[max(0,i-1)]).normalized();normal=Vector((-t.z,0,t.x))
+  if ice and abs(p.x)<6 and p.z>12:continue
+  tangent=(samples[min(i+1,len(samples)-1)]-samples[max(0,i-1)]).normalized();normal=Vector((-tangent.z,0,tangent.x))
   for side in [-1,1]:
-   at=p+normal*side*1.9
-   if random.random()<.20:continue
-   size=random.uniform(.25,.46);box('Irregular road edging',(at.x,.1,at.z),(size,.15,random.uniform(.3,.65)),stone,bevel=.07)
-  if i%28==0:
-   at=p+normal*2.5;c['lantern'](at,ice)
+   at=p+normal*side*1.78
+   if random.random()<.22:continue
+   size=random.uniform(.23,.40);box('Chipped paving edge',(at.x,.1,at.z),(size,.20,random.uniform(.3,.60)),stone if ice else basalt,bevel=.075)
+  if i%42==0:
+   at=p+normal*2.6;c['lantern'](at,ice)
    meta.setdefault('lanterns',[]).append([at.x,at.y+2.25,at.z])
  for s in spots:
   x,y,z=s['position'];tube('Rock tower terrace',(x,-.4,z),(x,.14,z),1.40,stone,r2=1.16,verts=24)
@@ -145,13 +173,30 @@ def build_landscape(c,mapid):
  if ice:
   camp(-32,1)
   for x,z,sc in [(31,6,.75),(36,10,1.05),(41,7,.9),(45,13,.65),(32,14,.65)]:house(x,z,sc)
-  # Arched bridge at the bay's outlet, narrow enough to defend.
-  for i in range(20):
-   x=-5.2+i*.55;box('Bridge deck',(x,.02,15),(.53,.18,3.8),wood,bevel=.025)
+  # Stone crossing extends into both banks; paving disappears below the abutments.
+  for x in [-5.8,5.8]:
+   box('Bridge abutment',(x,-.35,15),(2.3,1.1,4.25),stone,bevel=.25)
+   for z in [12.75,17.25]:
+    tube('Bridge watch turret',(x,-.1,z),(x,2.9,z),.65,stone,verts=16)
+    ring('Watch turret crown',(x,2.9,z),.70,.13,stone)
+    for k in range(6):
+     a=k*math.tau/6;box('Watch crenel',(x+math.cos(a)*.52,3.15,z+math.sin(a)*.52),(.28,.4,.28),stone,bevel=.035)
+    meta.setdefault('lanterns',[]).append([x,2,z])
+  for i in range(25):
+   x=-6.0+i*.5;box('Bridge paving',(x,.055,15),(.51,.19,3.8),stone,bevel=.04)
   for side in [-1,1]:
-   curve('Bridge arch',[(-5.5,0,15+side*1.8),(-3,-.8,15+side*1.8),(0,-1.4,15+side*1.8),(3,-.8,15+side*1.8),(5.5,0,15+side*1.8)],.24,stone)
-   tube('Bridge rail',(-5.5,.7,15+side*1.9),(5.5,.7,15+side*1.9),.07,wood)
-   for x in [-5,-2.5,0,2.5,5]:tube('Bridge post',(x,.05,15+side*1.9),(x,.95,15+side*1.9),.075,wood)
+   curve('Bridge arch',[(-6,0,15+side*1.8),(-3,-1.2,15+side*1.8),(0,-1.8,15+side*1.8),(3,-1.2,15+side*1.8),(6,0,15+side*1.8)],.38,stone)
+   box('Bridge parapet',(0,.6,15+side*1.94),(12.8,.8,.35),stone,bevel=.1)
+  # Timber fences, stone walls and supplies tie the settlement to the military road.
+  for x,z,sc in [(29,20,.65),(36,21,.85),(43,23,.7),(46,3,.6),(29,9,.55)]:house(x,z,sc)
+  for x,z in [(27,5),(30,17),(-30,4),(-34,3)]:
+   y=height(x,z)
+   for k in range(3):box('Camp supply crate',(x+k*.65,y+.3,z),(.6,.6,.6),wood,bevel=.05)
+  for side in [-1,1]:
+   for z in range(3,20,2):
+    x=side*28;y=height(x,z)
+    tube('Settlement fence post',(x,y,z),(x,y+1,z),.08,wood)
+    tube('Settlement fence rail',(x,y+.65,z),(x,height(x,z+2)+.65,z+2),.065,wood)
   # A lookout island with a short footbridge to the east shore.
   for x in range(2,11):box('Lookout footbridge',(x,-.05,-20),(.94,.18,1.6),wood,bevel=.04)
   # Dock and moored fishing boat on the sheltered shore.
@@ -177,7 +222,31 @@ def build_landscape(c,mapid):
    a=i*math.tau/64;vv.append((-12+math.cos(a)*4.5,26+math.sin(a*5)*.15,-53+math.sin(a)*3.4))
   mesh('Glowing volcanic crater',vv,[(0,i+2,i+1) for i in range(64)],magma)
   meta['fires'].append([-12,27,-53])
- c['fortress'](route[-1],ice);c['portal'](route[0],ice)
+ c['fortress'](route[-1],ice)
+ # The enemy source is a fortress with an open, illuminated gate facing the road.
+ x,y,z=route[0];wall=c['ICE'] if ice else basalt;glow=c['FROST'] if ice else c['EMBER']
+ for dx,dz,h,r in [(-3,-5,12,2),(-3,5,14,2.3),(-11,-6,17,2.5),(-11,6,15,2.2)]:
+  tube('Enemy castle tower',(x+dx,-.4,z+dz),(x+dx,h,z+dz),r,wall,verts=20)
+  for yy in [2.5,5.5,8.5]:ring('Castle tower stone band',(x+dx,yy,z+dz),r+.08,.14,stone if ice else basalt)
+  tube('Castle spire',(x+dx,h,z+dz),(x+dx,h+5,z+dz),r*1.35,c['ICE'] if ice else c['DARK'],r2=.05,verts=16)
+  for yy in [4,7,10]:box('Castle burning slit',(x+dx+r*.9,yy,z+dz),(.12,1.35,.38),glow,bevel=.07)
+  if not ice:meta['fires'].append([x+dx,h,z+dz])
+ box('Enemy citadel keep',(x-10,5.5,z),(8,11,10),wall,bevel=.2)
+ for dz in [-1,1]:
+  box('Castle gatehouse side',(x-1,3.7,z+dz*3.5),(4,7.5,2),wall,bevel=.18)
+  box('Citadel flank',(x-8,4,z+dz*7),(9,8,1.5),wall,bevel=.18)
+ curve('Gate pointed vault',[(x+.9,4,z-2.5),(x+.9,6,z-1.4),(x+.9,7.2,z),(x+.9,6,z+1.4),(x+.9,4,z+2.5)],.65,wall)
+ for dz in [-2.2,2.2]:tube('Gate luminous arch',(x+1.05,0,z+dz),(x+1.05,4.3,z+dz),.065,glow)
+ # Darkness behind the opening gives emerging monsters an architectural origin.
+ box('Gate depth',(x-4,2.5,z),(.12,5,4.7),c['EYE'],bevel=.2)
+ for i in range(8):
+  box('Gatehouse crenel',(x-2+(i%2)*3,7.8,z-3.9+(i//2)*2.6),(1,.7,.8),wall,bevel=.07)
+ if ice:
+  for j in range(28):
+   xx=x+random.uniform(-15,1);zz=z+random.choice([-1,1])*random.uniform(7,10)
+   c['crystal']((xx,height(xx,zz),zz),random.uniform(.8,2.0),c['ICE'])
+ meta['enemy_castle']=[x-7,0,z]
+
  # Clustered, varied vegetation/stone props, instanced by the runtime.
  reserved=[(-32,1,6),(36,10,11)] if ice else [(36,10,10),(-5,3,7)]
  def allowed(x,z,margin=4):
@@ -185,19 +254,48 @@ def build_landscape(c,mapid):
   if min(math.hypot(x-s['position'][0],z-s['position'][2]) for s in spots)<3.1:return False
   if any(math.hypot(x-a,z-b)<r for a,b,r in reserved):return False
   if min(math.hypot(x-route[k][0],z-route[k][2]) for k in [0,-1])<8:return False
-  return height(x,z)>-.35
+  return height(x,z)>(-.75 if ice else -1.0)
  if ice:
-  clusters=[(-48,12,9,28),(-36,-3,7,19),(28,-3,8,22),(48,18,10,32),(-54,-35,8,22),(57,-37,9,25),(-35,-48,8,21),(37,-46,7,19),(-23,29,9,23),(23,29,9,24)]
+  clusters=[(-48,12,9,60),(-36,-3,7,19),(28,-3,8,22),(48,18,10,32),(-54,-35,8,22),(57,-37,9,25),(-35,-48,8,21),(37,-46,7,19),(-23,29,9,23),(23,29,9,24)]
   for cx,cz,radius,count in clusters:
-   for _ in range(count*2):
+   for _ in range(count*4):
     if count<=0:break
     a=random.uniform(0,math.tau);r=radius*math.sqrt(random.random());x=cx+math.cos(a)*r;z=cz+math.sin(a)*r
     if not allowed(x,z):continue
     sc=random.uniform(.55,1.35);meta['instances'].append({'key':'prop_fir_'+str(random.randrange(3)),'position':[x,height(x,z),z],'scale':[sc*random.uniform(.85,1.05),sc*random.uniform(.9,1.35),sc*random.uniform(.85,1.1)],'yaw':random.uniform(0,math.tau)})
     count-=1
- for _ in range(190):
+ # Continuous forest across the valley shoulders; small clearings remain around play.
+ if ice:
+  for _ in range(3000):
+   x=random.uniform(-87,87);z=random.uniform(-69,43)
+   if not allowed(x,z,4.6):continue
+   density=.52+.30*math.sin(x*.15+math.sin(z*.2))
+   if random.random()>density:continue
+   if height(x,z)>23:continue
+   sc=random.uniform(.5,1.25)
+   meta['instances'].append({'key':'prop_fir_'+str(random.randrange(3)),'position':[x,height(x,z)-.1,z],'scale':[sc,sc*random.uniform(.85,1.3),sc],'yaw':random.uniform(0,math.tau)})
+ # Shoulder cliff groups, rather than loose isolated boulders on empty plains.
+ for side in [-1,1]:
+  for j in range(30):
+   z=-40+j*2.4;x=side*(15.5+2.2*math.sin(z*.19))
+   if not allowed(x,z,5.2):continue
+   sc=random.uniform(1.2,3.8)
+   meta['instances'].append({'key':('prop_snowrock_' if ice else 'prop_basalt_')+str(j%3),'position':[x,height(x,z)-sc*.25,z],'scale':[sc,sc*random.uniform(1,2),sc*.8],'yaw':random.uniform(0,math.tau)})
+ if not ice:
+  # Jagged basalt stacks and ruined towers emerge from the lava sea.
+  for _ in range(210):
+   x=random.uniform(-82,82);z=random.uniform(-65,43)
+   if c['near_route'](x,z,route)<5.5:continue
+   if min(math.hypot(x-a['position'][0],z-a['position'][2]) for a in spots)<4:continue
+   y=height(x,z);h=random.uniform(2,10);r=random.uniform(.6,2.3)
+   tube('Basalt needle',(x,y-.8,z),(x+random.uniform(-.8,.8),y+h,z),r,basalt,r2=r*.08,verts=random.choice([5,6,7]))
+   if random.random()<.25:meta['fires'].append([x,y+h*.3,z])
+  for x,z in [(-44,-30),(-27,26),(20,27),(41,-31)]:
+   y=max(-1,height(x,z));tube('Ruined sentinel tower',(x,y-1,z),(x,y+5,z),1.5,basalt,verts=12)
+   for j in range(5):box('Ruined crenel',(x+math.cos(j*math.tau/5)*1.3,y+5,z+math.sin(j*math.tau/5)*1.3),(.5,1,.5),basalt)
+ for _ in range(650):
   x=random.uniform(-69,69);z=random.uniform(-53,35)
-  if not allowed(x,z,3.5):continue
+  if not allowed(x,z,5.5):continue
   sc=random.uniform(.55,2.2)
   meta['instances'].append({'key':('prop_snowrock_' if ice else 'prop_basalt_')+str(random.randrange(3)),'position':[x,height(x,z)-.15,z],'scale':[sc*random.uniform(.7,1.7),sc*random.uniform(.7,1.7),sc*random.uniform(.8,1.4)],'yaw':random.uniform(0,math.tau)})
   if not ice and sc>1.7:

@@ -13,7 +13,10 @@ void fragment(){
   ALBEDO=mix(vec3(.15,.20,.24)+grain,vec3(.58,.68,.74)+grain*.4,coat);
   ROUGHNESS=mix(.75,.96,coat);METALLIC=.03;
  }else{
-  ALBEDO=mix(vec3(.075,.07,.085),vec3(.20,.17,.18),n(world.xz*.18))+grain*.45;
+  float cracks=1.-smoothstep(.01,.045,abs(n(world.xz*.85)-.5));
+  float heat=cracks*smoothstep(.60,.82,n(world.xz*.14))*(1.-smoothstep(2.,7.,world.y));
+  ALBEDO=mix(vec3(.025,.013,.009),vec3(.09,.045,.025),n(world.xz*.18))+grain*.10;
+  EMISSION=vec3(1.6,.16,.008)*heat;
   ROUGHNESS=.83;METALLIC=.1;
  }
 }
