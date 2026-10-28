@@ -2,19 +2,17 @@
 
 const _hudEls = {};
 const _hudCache = {
-    hp: null, maxHp: null, coins: null, wave: null, totalWaves: null,
-    timer: null, hpDanger: null, phase: null
+    hp: null, coins: null, wave: null, totalWaves: null,
+    hpDanger: null, phase: null
 };
 let _exitPrevPaused = false;
 
 function _cacheHudEls() {
-    _hudEls.hpEl       = document.getElementById('hud-hp');
-    _hudEls.hpVal      = _hudEls.hpEl.querySelector('.hud-val');
-    _hudEls.hpMax      = _hudEls.hpEl.querySelector('.hud-max');
+    _hudEls.hpEl       = document.getElementById('base-health');
+    _hudEls.hpVal      = _hudEls.hpEl.querySelector('.base-health-value');
     _hudEls.coinsVal   = document.querySelector('#hud-coins .hud-val');
     _hudEls.waveVal    = document.querySelector('#hud-wave .hud-val');
     _hudEls.waveMax    = document.querySelector('#hud-wave .hud-max');
-    _hudEls.timerVal   = document.querySelector('#hud-timer .hud-val');
     _hudEls.endOverlay = document.getElementById('end-overlay');
     _hudEls.endTitle   = document.getElementById('end-title');
     _hudEls.endStars   = document.getElementById('end-stars');
@@ -49,6 +47,7 @@ function _closeExitModal(restorePause) {
 function initHUD() {
     _cacheHudEls();
     refreshHUD();
+    updateBaseHealthPosition();
     subscribeState(refreshHUD);
 
     _hudEls.speedBtns.forEach(btn => {
@@ -115,22 +114,61 @@ function initHUD() {
 
     document.getElementById('end-restart').addEventListener('click', () => location.reload());
 
+    const settings = document.getElementById('hud-settings');
+    settings.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => { settings.open = false; });
+    });
+    document.addEventListener('pointerdown', event => {
+        if (!settings.contains(event.target)) settings.open = false;
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') settings.open = false;
+    });
+
     refreshSpeedButtons();
+}
+
+function hudIconMarkup(name) {
+    return `<svg class="ui-icon" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+}
+
+// The camera is fixed during play; reproject only after camera/layout changes.
+const _baseHealthAnchor = new THREE.Vector3();
+function updateBaseHealthPosition() {
+    if (!_hudEls.hpEl || !currentMap || !camera || !renderer) return;
+    _baseHealthAnchor.copy(currentMap.waypoints[currentMap.waypoints.length - 1]);
+    _baseHealthAnchor.y += 18;
+    camera.updateMatrixWorld();
+    _baseHealthAnchor.project(camera);
+    const bounds = renderer.domElement.getBoundingClientRect();
+    const x = bounds.left + (_baseHealthAnchor.x + 1) * bounds.width / 2;
+    const y = bounds.top + (1 - _baseHealthAnchor.y) * bounds.height / 2;
+    _hudEls.hpEl.style.left = `${x}px`;
+    _hudEls.hpEl.style.top = `${y}px`;
+    _hudEls.hpEl.style.visibility = Math.abs(_baseHealthAnchor.x) <= 1 &&
+        Math.abs(_baseHealthAnchor.y) <= 1 && Math.abs(_baseHealthAnchor.z) <= 1 ? 'visible' : 'hidden';
 }
 
 function refreshAudioButton(btn) {
     const on = isAudioEnabled();
-    btn.textContent = on ? '🔊' : '🔇';
+    btn.innerHTML = hudIconMarkup(on ? 'volume' : 'muted');
+    btn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
+    btn.setAttribute('aria-pressed', String(!on));
     btn.classList.toggle('muted', !on);
 }
 
 function refreshSpeedButtons() {
     _hudEls.speedBtns.forEach(btn => {
-        btn.classList.toggle('active', GameState.speedMultiplier === parseInt(btn.dataset.speed, 10));
+        const active = GameState.speedMultiplier === parseInt(btn.dataset.speed, 10);
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', String(active));
     });
     const p = _hudEls.pauseBtn;
     p.classList.toggle('active', GameState.paused);
-    p.textContent = GameState.paused ? '▶' : '⏸';
+    p.innerHTML = hudIconMarkup(GameState.paused ? 'play' : 'pause');
+    p.setAttribute('aria-label', GameState.paused ? 'Продолжить игру' : 'Приостановить игру');
+    p.setAttribute('aria-pressed', String(GameState.paused));
+    p.title = `${GameState.paused ? 'Продолжить' : 'Пауза'} · Пробел`;
 }
 
 // Вызывается каждый кадр из animate() — DOM пишется только при реальном изменении.
@@ -138,15 +176,12 @@ function refreshHUD() {
     if (_hudCache.hp !== GameState.hp) {
         _hudCache.hp = GameState.hp;
         _hudEls.hpVal.textContent = GameState.hp;
+        _hudEls.hpEl.setAttribute('aria-label', `Здоровье базы: ${GameState.hp}`);
     }
-    if (_hudCache.maxHp !== GameState.maxHp) {
-        _hudCache.maxHp = GameState.maxHp;
-        _hudEls.hpMax.textContent = GameState.maxHp;
-    }
-    const danger = GameState.hp <= 5;
+    const danger = GameState.hp <= GameState.maxHp * 0.25;
     if (_hudCache.hpDanger !== danger) {
         _hudCache.hpDanger = danger;
-        _hudEls.hpEl.classList.toggle('hud-danger', danger);
+        _hudEls.hpEl.classList.toggle('base-danger', danger);
     }
     if (_hudCache.coins !== GameState.coins) {
         _hudCache.coins = GameState.coins;
@@ -159,15 +194,6 @@ function refreshHUD() {
     if (_hudCache.totalWaves !== GameState.totalWaves) {
         _hudCache.totalWaves = GameState.totalWaves;
         _hudEls.waveMax.textContent = GameState.totalWaves;
-    }
-
-    let timerText;
-    if (GameState.phase === 'prep')      timerText = Math.ceil(Math.max(0, GameState.prepTimer)) + 'с';
-    else if (GameState.phase === 'wave') timerText = 'Бой';
-    else                                 timerText = '—';
-    if (_hudCache.timer !== timerText) {
-        _hudCache.timer = timerText;
-        _hudEls.timerVal.textContent = timerText;
     }
 
     if (_hudCache.phase !== GameState.phase) {

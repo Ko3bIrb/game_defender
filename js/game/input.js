@@ -2,19 +2,23 @@ const _raycaster = new THREE.Raycaster();
 const _mouse = new THREE.Vector2();
 const _floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-let _touched = false; // флаг, чтобы отличить тап от свайпа
+let _pointerGesture = null;
 
 function initInput() {
     const dom = renderer.domElement;
 
-    if (IS_MOBILE) {
-        dom.addEventListener('touchstart', onTouchStart, { passive: false });
-        dom.addEventListener('touchmove',  onTouchMove,  { passive: false });
-        dom.addEventListener('touchend',   onTouchEnd,   { passive: false });
-    } else {
-        dom.addEventListener('click', onCanvasClick);
-        dom.addEventListener('mousemove', onCanvasMouseMove);
-    }
+    dom.tabIndex = 0;
+    dom.addEventListener('pointerdown', onCanvasPointerDown);
+    dom.addEventListener('pointermove', onCanvasPointerMove);
+    dom.addEventListener('pointerup', onCanvasPointerUp);
+    dom.addEventListener('pointercancel', cancelCanvasPointer);
+    dom.addEventListener('lostpointercapture', cancelCanvasPointer);
+    dom.addEventListener('pointerleave', (event) => {
+        if (event.pointerType === 'mouse' && hoveredTower) {
+            hoveredTower = null;
+            updateRangeCircle();
+        }
+    });
 
     // Клавиатура работает всегда (для десктопа + внешние клавиатуры на планшетах)
     document.addEventListener('keydown', (e) => {
@@ -28,6 +32,8 @@ function initInput() {
             }
         }
         if (isModalOpen) return;
+
+        if (e.code === 'Space' && e.target.closest('button, summary')) return;
 
         if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
             e.preventDefault();
@@ -64,48 +70,47 @@ function initInput() {
     }, { capture: true });
 }
 
-// ─── Тач-обработчики ───
-let _touchStartX = 0, _touchStartY = 0, _touchStartTime = 0;
-
-function onTouchStart(e) {
-    e.preventDefault();
-    if (e.touches.length === 0) return;
-    const t = e.touches[0];
-    _touchStartX = t.clientX;
-    _touchStartY = t.clientY;
-    _touchStartTime = performance.now();
-    _touched = false;
-
-    _updateMouse(t);
-    // Показываем призрак башни при тапе (на случай если тап перейдёт в драг)
-    if (buildingType) onCanvasMouseMove(t);
-}
-
-function onTouchMove(e) {
-    e.preventDefault();
-    if (e.touches.length === 0) return;
-    const t = e.touches[0];
-
-    const dx = t.clientX - _touchStartX;
-    const dy = t.clientY - _touchStartY;
-    if (dx * dx + dy * dy > 400) _touched = true; // сдвиг > 20px = свайп
-
-    _updateMouse(t);
-    if (buildingType) onCanvasMouseMove(t);
-}
-
-function onTouchEnd(e) {
-    e.preventDefault();
-    if (e.changedTouches.length === 0) return;
-    const t = e.changedTouches[0];
-    const dt = performance.now() - _touchStartTime;
-
-    // Считаем тапом только если не сдвинулись и не долго держали
-    if (!_touched && dt < 500) {
-        _updateMouse(t);
-        onCanvasClick(t);
+// One gesture path for mouse, pen and touch, including hybrid devices.
+function onCanvasPointerDown(event) {
+    if (event.button !== 0) return;
+    if (!event.isPrimary || _pointerGesture) {
+        if (_pointerGesture) _pointerGesture.cancelled = true;
+        return;
     }
-    _touched = false;
+    _pointerGesture = {
+        id: event.pointerId, x: event.clientX, y: event.clientY,
+        time: performance.now(), moved: false, cancelled: false
+    };
+    renderer.domElement.setPointerCapture(event.pointerId);
+    if (buildingType) onCanvasMouseMove(event);
+}
+
+function onCanvasPointerMove(event) {
+    const gesture = _pointerGesture;
+    if (gesture && gesture.id === event.pointerId) {
+        const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+        if (dx * dx + dy * dy > 400) gesture.moved = true;
+        if (!gesture.cancelled && buildingType) onCanvasMouseMove(event);
+    } else if (event.pointerType === 'mouse') {
+        onCanvasMouseMove(event);
+    }
+}
+
+function onCanvasPointerUp(event) {
+    const gesture = _pointerGesture;
+    if (!gesture || gesture.id !== event.pointerId) return;
+    _pointerGesture = null;
+    const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+    const isTap = !gesture.cancelled && !gesture.moved && dx * dx + dy * dy <= 400;
+    const isQuick = event.pointerType === 'mouse' || performance.now() - gesture.time < 500;
+    // A captured pointer may finish over the shop or the tower panel.
+    if (isTap && isQuick && document.elementFromPoint(event.clientX, event.clientY) === renderer.domElement) {
+        onCanvasClick(event);
+    }
+}
+
+function cancelCanvasPointer(event) {
+    if (_pointerGesture && _pointerGesture.id === event.pointerId) _pointerGesture = null;
 }
 
 function _updateMouse(event) {

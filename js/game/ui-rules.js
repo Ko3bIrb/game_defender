@@ -7,17 +7,19 @@ function initRules() {
 
     if (!rulesBtn || !rulesModal) return;
 
+    let wasPaused = false;
     rulesBtn.addEventListener('click', () => {
+        wasPaused = GameState.paused;
         rulesModal.classList.remove('hidden');
-        if (typeof GameState !== 'undefined') GameState.paused = true;
+        GameState.paused = true;
+        refreshSpeedButtons();
     });
 
     const closeRules = () => {
         rulesModal.classList.add('hidden');
         if (typeof GameState !== 'undefined') {
-            GameState.paused = false;
-            const pauseBtn = document.getElementById('hud-pause');
-            if (pauseBtn) pauseBtn.textContent = '⏸';
+            GameState.paused = wasPaused;
+            refreshSpeedButtons();
         }
     };
     closeBtn.addEventListener('click', closeRules);
