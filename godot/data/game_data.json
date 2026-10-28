@@ -4,7 +4,7 @@
   "maps": {
     "hell": {
       "id": "hell",
-      "name": "Последний Бастион",
+      "name": "Пепельный разлом",
       "waypoints": [
         [
           -50,
@@ -777,7 +777,7 @@
     },
     "ice": {
       "id": "ice",
-      "name": "Ледяной Предел",
+      "name": "Зимняя бухта",
       "waypoints": [
         [
           -52,
@@ -965,33 +965,33 @@
         },
         {
           "position": [
-            -8,
+            -17,
             0,
-            -28
+            -30
           ],
           "restricted_to": ""
         },
         {
           "position": [
-            8,
+            17,
             0,
-            -28
+            -30
           ],
           "restricted_to": ""
         },
         {
           "position": [
-            -4,
+            -15,
             0,
-            -10
+            -9
           ],
           "restricted_to": ""
         },
         {
           "position": [
-            4,
+            15,
             0,
-            -10
+            -9
           ],
           "restricted_to": ""
         },

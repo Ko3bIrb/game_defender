@@ -4,8 +4,11 @@ const PATH = "user://progress.json"
 var data: Dictionary = {"best_waves": {}, "stars": {}, "total_kills": 0, "total_waves": 0, "audio_enabled": true, "difficulty": {"hell": "easy", "ice": "easy"}, "selected_map": "hell"}
 
 func _init() -> void:
-	if FileAccess.file_exists(PATH):
-		var loaded = JSON.parse_string(FileAccess.get_file_as_string(PATH))
+	var source = PATH
+	if not FileAccess.file_exists(source):
+		source = OS.get_user_data_dir().get_base_dir().path_join("Защитник/progress.json")
+	if FileAccess.file_exists(source):
+		var loaded = JSON.parse_string(FileAccess.get_file_as_string(source))
 		if loaded is Dictionary:
 			data.merge(loaded, true)
 

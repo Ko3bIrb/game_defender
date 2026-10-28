@@ -2,35 +2,45 @@ extends Node
 
 var enabled = true
 var _players: Array[AudioStreamPlayer] = []
-var _files = {"roar": preload("res://assets/audio/the_monster_roar.mp3"), "exit": preload("res://assets/audio/the_monsters_exit.mp3"), "scream": preload("res://assets/audio/scream.mp3")}
+var _files = {"roar": preload("res://assets/audio/the_monster_roar.wav"), "exit": preload("res://assets/audio/the_monsters_exit.wav"), "scream": preload("res://assets/audio/scream.wav")}
 var _last_shoot = -10000
 var _last_death = -10000
 var _last_roar = -10000
 var _last_scream = -10000
 var _shot: AudioStreamWAV
 var _death: AudioStreamWAV
+var _weapons: Dictionary = {}
 
 func _ready() -> void:
-	_shot = _tone(0.05)
-	_death = _tone(0.10)
+	for key in ["gun","sniper","mortar","skyguard"]: _weapons[key] = _weapon(key)
+	_shot = _weapons.gun
+	_death = _weapon("death")
 	for i in range(12):
 		var player = AudioStreamPlayer.new()
 		add_child(player)
 		_players.append(player)
 
-func _tone(volume: float) -> AudioStreamWAV:
+func _weapon(kind: String) -> AudioStreamWAV:
 	var stream = AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
 	stream.mix_rate = 22050
+	var duration = .30 if kind == "mortar" else .18 if kind == "sniper" else .11
+	var random = RandomNumberGenerator.new()
+	random.seed = kind.hash()
 	var bytes = PackedByteArray()
-	var phase = 0.0
-	for i in range(int(22050 * 0.07)):
-		var t = float(i) / 22050.0
-		phase += TAU * 320.0 * pow(0.65, min(t / 0.055, 1.0)) / 22050.0
-		var gain = volume * t / 0.004 if t < 0.004 else volume * pow(0.0001 / volume, (t - 0.004) / 0.056)
-		var sample = int(sin(phase) * gain * 32767.0)
-		bytes.append(sample & 255)
-		bytes.append((sample >> 8) & 255)
+	var low = 0.0
+	for i in range(int(22050*duration)):
+		var t = float(i)/22050.0
+		var noise = random.randf_range(-1,1)
+		low = lerpf(low,noise,.12 if kind == "mortar" else .35)
+		var decay = exp(-t*(15 if kind == "mortar" else 35 if kind == "sniper" else 50))
+		var thump = sin(TAU*(65 if kind == "mortar" else 130)*t)*exp(-t*28)
+		var value = (low*.6+noise*.14+thump*.28)*decay
+		if kind == "skyguard": value = noise*.23*exp(-t*45)+sin(t*TAU*1800)*.06*exp(-t*70)
+		if kind == "death": value = low*.35*exp(-t*32)+sin(t*TAU*80)*.12*exp(-t*35)
+		var sample = int(clampf(value,-1,1)*12000)
+		bytes.append(sample&255)
+		bytes.append((sample>>8)&255)
 	stream.data = bytes
 	return stream
 
@@ -45,11 +55,11 @@ func _play(stream: AudioStream, volume: float, pitch: float = 1.0) -> void:
 			player.play()
 			return
 
-func shoot() -> void:
+func shoot(type: String = "gun") -> void:
 	var now = Time.get_ticks_msec()
 	if now - _last_shoot >= 150:
 		_last_shoot = now
-		_play(_shot, 1.0, randf_range(0.9, 1.1))
+		_play(_weapons.get(type,_shot), 1.0, randf_range(0.94, 1.06))
 
 func death() -> void:
 	var now = Time.get_ticks_msec()
@@ -77,6 +87,7 @@ func set_enabled(value: bool) -> void:
 	if not value:
 		for player in _players:
 			player.stop()
+			player.stream = null
 
 func _exit_tree() -> void:
 	for player in _players:

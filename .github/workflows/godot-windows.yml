@@ -47,7 +47,7 @@ jobs:
           cp godot/README.md godot/build/windows/README.md
       - uses: actions/upload-artifact@v4
         with:
-          name: Defender-Godot-Windows-x64
+          name: NightWatch-Windows-x64
           path: godot/build/windows/
           if-no-files-found: error
           retention-days: 14

@@ -4,7 +4,10 @@ const Data = preload("res://scripts/game_data.gd")
 const Simulation = preload("res://scripts/simulation.gd")
 const SaveStore = preload("res://scripts/save_store.gd")
 const Sound = preload("res://scripts/sound.gd")
+const CombatFX = preload("res://scripts/combat_fx.gd")
+const Landscape = preload("res://scripts/landscape.gd")
 const Atmosphere = preload("res://scripts/atmosphere.gd")
+const MAP_IMAGES = {"hell":preload("res://assets/map_hell.png"),"ice":preload("res://assets/map_ice.png")}
 const TYPES = ["gun", "sniper", "mortar", "slow", "skyguard", "amp"]
 
 var save_store = SaveStore.new()
@@ -31,6 +34,8 @@ var sell_button: Button
 var audio_button: Button
 var speed_slider: HSlider
 var speed_value: Label
+var tactical_button: Button
+var _hud_visibility: Dictionary = {}
 var _pause_menu_open = false
 var _return_to_pause = false
 var shop_buttons: Dictionary = {}
@@ -57,11 +62,24 @@ var accent = Color("c99d62")
 var panel_color = Color("181410")
 var muted = Color("b9aa95")
 var _last_time = 0.0
+var fx: Node3D
+var _actor_pool: Dictionary = {}
+var _recoil: Dictionary = {}
+var _loading = false
+var _loading_overlay: ColorRect
+var _bar_background: QuadMesh
+var _bar_fill: QuadMesh
+var _bar_dark: StandardMaterial3D
+var _bar_green: StandardMaterial3D
+var pool_growth = 0
+var _ghost_material: StandardMaterial3D
+var _unit_range: ImmediateMesh
 var _screenshot_path = ""
 var _screenshot_timer = 0.0
 
 func _ready() -> void:
 	get_window().mode = Window.MODE_FULLSCREEN
+	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	get_tree().auto_accept_quit = false
 	sound = Sound.new()
 	add_child(sound)
@@ -92,8 +110,9 @@ func _ready() -> void:
 			call_deferred("_demo")
 
 func _demo() -> void:
+	while _loading: await get_tree().process_frame
 	if sim == null:
-		start_game("hell", "easy")
+		await start_game("hell", "easy")
 	sim.coins = 3000
 	for i in range(min(8, sim.spots.size())):
 		sim.build("sniper" if sim.spots[i].restricted_to != "" else TYPES[i % 6] if TYPES[i % 6] != "sniper" else "gun", i)
@@ -224,7 +243,7 @@ func _menu_backdrop(parent: Control) -> void:
 func _menu_contents(rows: VBoxContainer, paused: bool) -> void:
 	var caption = _label("ПОСЛЕДНИЙ БАСТИОН  /  ЗИМНЯЯ СТРАЖА", rows, 11)
 	caption.modulate = Color("b6c4cf")
-	var title = _label("ЗАЩИТНИК", rows, 35)
+	var title = _label("НОЧНОЙ ДОЗОР", rows, 35)
 	title.add_theme_font_override("font", preload("res://assets/fonts/Title.ttf"))
 	title.modulate = Color("f1e5d1")
 	var subtitle = _label("Пока горит огонь — надежда жива.", rows, 12)
@@ -238,23 +257,21 @@ func _menu_contents(rows: VBoxContainer, paused: bool) -> void:
 	if paused:
 		_button("В главное меню", func(): _open_menu_dialog(_confirm_exit, true), rows, Vector2(355, 46))
 	_button("Выйти из игры", _quit_game, rows, Vector2(355, 46))
-	_label("ESC — ВЕРНУТЬСЯ К ЗАЩИТЕ" if paused else "ОДИНОКИЙ СТРАЖ · ЗИМНИЕ СУМЕРКИ", rows, 10).modulate = Color("8b9da8")
+	if paused:
+		_label("ESC — ВЕРНУТЬСЯ К ОБОРОНЕ", rows, 10).modulate = Color("8b9da8")
 
 func _open_menu_dialog(callback: Callable, from_pause: bool) -> void:
 	callback.call()
 	_return_to_pause = from_pause
 
 func _show_pause_menu() -> void:
-	if sim == null:
+	if sim == null or _loading:
 		return
 	_return_to_pause = false
 	var rows = _dialog("", 435)
 	rows.get_child(0).queue_free()
-	_menu_backdrop(_active_dialog)
 	_menu_contents(rows, true)
 	_pause_menu_open = true
-	if is_instance_valid(world):
-		world.hide()
 
 func _back_dialog() -> void:
 	if _return_to_pause:
@@ -268,8 +285,9 @@ func _dialog(title: String, width: float = 600.0) -> VBoxContainer:
 	if sim != null:
 		_dialog_pause = sim.paused
 		sim.paused = true
+		_hide_game_hud()
 	_active_dialog = ColorRect.new()
-	_active_dialog.color = Color(0.01, 0.02, 0.04, 0.9)
+	_active_dialog.color = Color(0.01, 0.02, 0.04, 0.46)
 	_active_dialog.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dialog_layer.add_child(_active_dialog)
 	var center = CenterContainer.new()
@@ -285,7 +303,19 @@ func _dialog(title: String, width: float = 600.0) -> VBoxContainer:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return rows
 
+func _hide_game_hud() -> void:
+	for child in ui.get_children():
+		if child != dialog_layer and child is CanvasItem:
+			_hud_visibility[child] = child.visible
+			child.hide()
+
+func _restore_game_hud() -> void:
+	for child in _hud_visibility:
+		if is_instance_valid(child): child.visible = _hud_visibility[child]
+	_hud_visibility.clear()
+
 func _close_dialog() -> void:
+	_restore_game_hud()
 	_pause_menu_open = false
 	if is_instance_valid(world):
 		world.show()
@@ -296,13 +326,33 @@ func _close_dialog() -> void:
 			sim.paused = _dialog_pause
 
 func _show_maps() -> void:
-	var rows = _dialog("ВЫБОР КАРТЫ", 650)
+	var rows = _dialog("ВЫБОР КАРТЫ", 880)
+	var cards = HBoxContainer.new()
+	cards.add_theme_constant_override("separation", 16)
+	rows.add_child(cards)
 	for id in ["hell", "ice"]:
-		var data = Data.all().maps[id]
-		var best = save_store.data.best_waves.get(id, 0)
-		var stars = int(save_store.data.stars.get(id, 0))
-		var text = data.name + "\n" + ("Ад" if id == "hell" else "Лёд") + " · 20 волн · Рекорд: %s · %s" % [best, "★".repeat(stars)]
-		_button(text, func(): save_store.data.selected_map = id; save_store.save(); _choose_difficulty(id), rows, Vector2(600, 90))
+		var button = _button("", func(): save_store.data.selected_map = id; save_store.save(); _choose_difficulty(id), cards, Vector2(410, 310))
+		button.tooltip_text = "Выбрать карту"
+		var content = VBoxContainer.new()
+		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		content.offset_left = 12
+		content.offset_right = -12
+		content.offset_top = 12
+		content.offset_bottom = -12
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(content)
+		var preview = TextureRect.new()
+		preview.texture = MAP_IMAGES[id]
+		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		preview.custom_minimum_size = Vector2(386, 196)
+		preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(preview)
+		_label("ПЕПЕЛЬНЫЙ РАЗЛОМ" if id == "hell" else "ЗИМНЯЯ БУХТА", content, 19).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var description = _label("Лава, огненные уступы и дорога сквозь руины" if id == "hell" else "Водопад, береговые уступы и узкий мост", content, 12)
+		description.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var record = _label("20 волн · Рекорд: %d · %s" % [save_store.data.best_waves.get(id, 0), "★".repeat(int(save_store.data.stars.get(id, 0)))], content, 12)
+		record.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_button("Назад", _back_dialog, rows)
 
 func _choose_difficulty(id: String) -> void:
@@ -321,7 +371,7 @@ func _show_rules() -> void:
 	var content = VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(content)
-	var intro = _label("Отбейте 20 волн. Враги, дошедшие до крепости, отнимают здоровье.\nВыберите башню внизу и свободную площадку на карте.\nСнайпер строится только на специальных синих площадках.\nEsc — меню паузы · Ползунок ТЕМП — от 0.25× до 5×.\nПодготовка следующей волны начинается автоматически.", content, 15)
+	var intro = _label("Отбейте 20 волн. Враги, дошедшие до крепости, отнимают здоровье.\nВыберите башню внизу и свободную площадку на карте.\nСнайпер строится только на специальных синих площадках.\nEsc — меню · Пробел — тактическая пауза для строительства.\nПолзунок ТЕМП — от 0.25× до 5×.\nПодготовка следующей волны начинается автоматически.", content, 15)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for type in TYPES:
 		var data = Data.all().towers[type]
@@ -334,6 +384,21 @@ func _show_rules() -> void:
 	_button("Понятно", _back_dialog, rows)
 
 func start_game(id: String, difficulty_id: String) -> void:
+	if _loading:
+		return
+	_loading = true
+	_loading_overlay = ColorRect.new()
+	_loading_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_loading_overlay.color = Color("0b131f")
+	dialog_layer.add_child(_loading_overlay)
+	var center = CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_loading_overlay.add_child(center)
+	var label = _label("НОЧНОЙ ДОЗОР\n\nПодготовка карты…", center, 28)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	await get_tree().process_frame
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
 	_close_dialog()
 	_return_to_pause = false
 	if world != null:
@@ -341,6 +406,8 @@ func start_game(id: String, difficulty_id: String) -> void:
 	if camera != null:
 		camera.queue_free()
 	_remove_game_ui()
+	_actor_pool.clear()
+	_recoil.clear()
 	tower_nodes.clear()
 	enemy_nodes.clear()
 	spot_nodes.clear()
@@ -372,6 +439,11 @@ func start_game(id: String, difficulty_id: String) -> void:
 	world = Node3D.new()
 	add_child(world)
 	world.add_child(_model("world_" + id))
+	var landscape = Landscape.new()
+	world.add_child(landscape)
+	landscape.configure(world, id)
+	fx = CombatFX.new()
+	world.add_child(fx)
 	_lighting(id)
 	camera = Camera3D.new()
 	camera.fov = 45.0
@@ -394,6 +466,102 @@ func start_game(id: String, difficulty_id: String) -> void:
 	_layout()
 	call_deferred("_layout")
 	ui.move_child(dialog_layer, ui.get_child_count() - 1)
+	await _prepare_combat()
+	_loading = false
+	_loading_overlay.queue_free()
+
+func _prepare_combat() -> void:
+	_bar_background = QuadMesh.new()
+	_bar_background.size = Vector2(2, .15)
+	_bar_fill = QuadMesh.new()
+	_bar_fill.size = Vector2(2, .13)
+	_bar_dark = StandardMaterial3D.new()
+	_bar_dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_bar_dark.albedo_color = Color("160f18")
+	_bar_green = StandardMaterial3D.new()
+	_bar_green.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_bar_green.albedo_color = Color("a9da77")
+	var warm_nodes: Array = []
+	for type in sim.map.enemies:
+		var capacity = 2
+		for wave in sim.map.waves:
+			var count = 0
+			for group in wave.groups:
+				if group.type == type: count += int(group.count)
+			capacity = maxi(capacity, count)
+		_actor_pool[type] = []
+		for i in range(mini(32, capacity)):
+			_actor_pool[type].append(_new_actor(type))
+		var entry = _actor_pool[type][0]
+		entry.node.position = Vector3(0, 2, 0)
+		entry.node.show()
+		entry.bar.position = Vector3(0,4,0)
+		entry.bar.show()
+		warm_nodes.append(entry.node)
+		warm_nodes.append(entry.bar)
+	for type in TYPES:
+		for level in [1,2,3]:
+			var node = _model("tower_%s_%d" % [type,level])
+			world.add_child(node)
+			warm_nodes.append(node)
+	_ghost_material = StandardMaterial3D.new()
+	_ghost_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_ghost_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_ghost_material.albedo_color = Color(.25,.8,.6,.35)
+	for type in TYPES:
+		var preview = _model("tower_%s_1" % type)
+		world.add_child(preview)
+		_ghost_style(preview)
+		warm_nodes.append(preview)
+	_draw_range(Vector3.ZERO,1,Color("88bbcc"))
+	fx.warmup(Vector3(0,2,0))
+	for i in range(2):
+		await get_tree().process_frame
+		if DisplayServer.get_name() != "headless": await RenderingServer.frame_post_draw
+	for node in warm_nodes: node.hide()
+	for node in warm_nodes:
+		if node not in _actor_nodes(): node.queue_free()
+	fx.particles.clear()
+	fx.render(0)
+	_hide_range()
+
+func _actor_nodes() -> Array:
+	var nodes: Array = []
+	for type in _actor_pool:
+		for entry in _actor_pool[type]:
+			nodes.append(entry.node)
+			nodes.append(entry.bar)
+	return nodes
+
+func _new_actor(type: String) -> Dictionary:
+	var node = _model("enemy_" + type)
+	world.add_child(node)
+	node.hide()
+	var bar = Node3D.new()
+	world.add_child(bar)
+	bar.hide()
+	var background = MeshInstance3D.new()
+	background.mesh = _bar_background
+	background.material_override = _bar_dark
+	bar.add_child(background)
+	var fill = MeshInstance3D.new()
+	fill.mesh = _bar_fill
+	fill.material_override = _bar_green
+	fill.position.z = .01
+	bar.add_child(fill)
+	var joints: Array = []
+	for joint in node.find_children("motion_*", "Node3D", true, false):
+		var key = str(joint.name)
+		var role = 0 if "leg" in key else 1 if "arm" in key else 2 if "wing" in key else 3 if "head" in key else 4
+		joints.append({"node":joint,"role":role,"sign":-1.0 if key.ends_with("L") or "-1" in key else 1.0,"rest":joint.transform})
+	return {"node":node,"bar":bar,"fill":fill,"joints":joints,"type":type}
+
+func _release_actor(entry: Dictionary) -> void:
+	entry.node.hide()
+	entry.bar.hide()
+	entry.node.transform = Transform3D.IDENTITY
+	for joint in entry.joints: joint.node.transform = joint.rest
+	_actor_pool[entry.type].append(entry)
 
 func _model(key: String) -> Node3D:
 	if not _models.has(key):
@@ -443,6 +611,8 @@ func _build_hud() -> void:
 	_button("Сложность", func(): _choose_difficulty(sim.map_id), nav)
 	speed_bar = HBoxContainer.new()
 	ui.add_child(speed_bar)
+	tactical_button = _button("Ⅱ Пауза", _toggle_tactical_pause, speed_bar, Vector2(130, 44))
+	tactical_button.tooltip_text = "Пробел · Можно строить, улучшать и продавать башни"
 	var tempo = VBoxContainer.new()
 	tempo.add_theme_constant_override("separation", 3)
 	speed_bar.add_child(tempo)
@@ -500,11 +670,17 @@ func _build_hud() -> void:
 	tower_stats = _label("", rows, 13)
 	var actions = HBoxContainer.new()
 	rows.add_child(actions)
-	upgrade_button = _button("", _upgrade, actions, Vector2(104, 44))
+	upgrade_button = _button("", _upgrade, actions, Vector2(132, 44))
 	upgrade_button.add_theme_font_size_override("font_size", 12)
-	sell_button = _button("", _sell, actions, Vector2(104, 44))
+	sell_button = _button("", _sell, actions, Vector2(132, 44))
 	sell_button.add_theme_font_size_override("font_size", 12)
 	tower_panel.hide()
+
+func _toggle_tactical_pause() -> void:
+	if sim == null or _active_dialog != null:
+		return
+	sim.paused = not sim.paused
+	_refresh()
 
 func _confirm_exit() -> void:
 	var rows = _dialog("Выйти в меню?", 500)
@@ -521,6 +697,7 @@ func _toggle_audio() -> void:
 func _refresh() -> void:
 	if sim == null or coins_label == null:
 		return
+	tactical_button.text = "▶ Продолжить" if sim.paused else "Ⅱ Пауза"
 	coins_label.text = str(sim.coins)
 	wave_label.text = "ВОЛНА  %d / 20" % sim.wave
 	health_label.text = str(sim.hp)
@@ -547,12 +724,16 @@ func _refresh() -> void:
 			text += "\nУсиление: +%d%%" % stats.buffPercent
 		tower_stats.text = text
 		var cost = Data.upgrade_cost(selected.type, selected.level)
-		upgrade_button.text = "Макс.\nуровень" if cost < 0 else "Улучшить\n· %d" % cost
+		upgrade_button.text = "Макс.\nуровень" if cost < 0 else "Улучшить (%d)" % cost
 		upgrade_button.disabled = cost < 0 or sim.coins < cost
-		sell_button.text = "Продать\n· +%d" % Data.sell_price(selected.type, selected.level)
+		sell_button.text = "Продать +%d" % Data.sell_price(selected.type, selected.level)
 		tower_panel.show()
 	else:
 		tower_panel.hide()
+
+	if not _hud_visibility.is_empty():
+		for child in _hud_visibility:
+			if is_instance_valid(child): child.hide()
 
 func _layout() -> void:
 	var view = get_viewport().get_visible_rect().size
@@ -635,7 +816,7 @@ func enter_build(type: String) -> void:
 	building = type
 	ghost = _model("tower_%s_1" % type)
 	world.add_child(ghost)
-	_transparency(ghost, 0.55)
+	_ghost_style(ghost)
 	ghost.hide()
 	for i in range(spot_nodes.size()):
 		var spot = sim.spots[i]
@@ -684,35 +865,44 @@ func _tower_changed(tower: Dictionary, action: String) -> void:
 		var node = _model("tower_%s_%d" % [tower.type, tower.level])
 		node.position = tower.position
 		world.add_child(node)
+		node.set_meta("turret", node.find_child("turret", true, false))
 		tower_nodes[tower.id] = node
 	spot_nodes[tower.spot].visible = building != "" and _spot_allows(tower.spot, building)
 
 func _enemy_spawned(enemy: Dictionary) -> void:
-	var node = _model("enemy_" + enemy.type)
-	world.add_child(node)
-	var bar = Node3D.new()
-	world.add_child(bar)
-	var background = _mesh(QuadMesh.new(), Color("160f18"), true)
-	background.mesh.size = Vector2(2.0, 0.15)
-	bar.add_child(background)
-	var fill = _mesh(QuadMesh.new(), Color("a9da77"), true)
-	fill.mesh.size = Vector2(2.0, 0.13)
-	fill.position.z = 0.01
-	bar.add_child(fill)
-	enemy_nodes[enemy.id] = {"node": node, "bar": bar, "fill": fill, "joints": node.find_children("motion_*", "Node3D", true, false)}
-	var data = sim.map.enemies[enemy.type]
-	sound.growl(data.get("isBoss", false))
+	var entry: Dictionary
+	if _actor_pool[enemy.type].is_empty():
+		entry = _new_actor(enemy.type)
+		pool_growth += 1
+	else:
+		entry = _actor_pool[enemy.type].pop_back()
+	entry.node.position = enemy.position + Vector3.UP * enemy.base_y
+	entry.node.show()
+	entry.bar.show()
+	entry.fill.scale.x = 1
+	entry.fill.position.x = 0
+	entry.previous = enemy.position
+	entry.previous_phase = enemy.walk_phase
+	enemy_nodes[enemy.id] = entry
+	sound.growl(sim.map.enemies[enemy.type].get("isBoss", false))
 
 func _enemy_removed(enemy: Dictionary, rewarded: bool) -> void:
-	if not enemy_nodes.has(enemy.id):
-		return
+	if not enemy_nodes.has(enemy.id): return
 	var entry = enemy_nodes[enemy.id]
-	entry.bar.queue_free()
-	deaths.append({"node": entry.node, "time": 0.0, "start_y": float(entry.node.position.y), "target_y": max(0.08, sim.map.enemies[enemy.type].size * 0.15), "angle": entry.node.rotation.z, "direction": -1.0 if randf() < 0.5 else 1.0})
 	enemy_nodes.erase(enemy.id)
-	if rewarded:
-		sound.death()
-		_coin_burst(enemy.position + Vector3.UP * enemy.base_y, 28 if sim.map.enemies[enemy.type].get("isBoss", false) else randi_range(3, 5))
+	entry.bar.hide()
+	if not rewarded:
+		_release_actor(entry)
+		return
+	var data = sim.map.enemies[enemy.type]
+	var spectral = enemy.type in ["soul_eater","blizzard_spirit","blizzard_lord","spire"]
+	deaths.append({"entry":entry,"time":0.0,"start":entry.node.position,"rotation":entry.node.rotation,"spectral":spectral,"machine":"ballista" in enemy.type,"flying":data.flying,"base":enemy.base_y,"size":data.size})
+	if deaths.size() > 40:
+		_release_actor(deaths[0].entry)
+		deaths.pop_front()
+	fx.death(enemy.position + Vector3.UP * enemy.base_y,enemy.type,data.size,data.flying)
+	fx.reward(enemy.position + Vector3.UP * enemy.base_y,data.get("isBoss",false))
+	sound.death()
 
 func _transparency(node: Node, value: float) -> void:
 	if node is GeometryInstance3D:
@@ -787,7 +977,7 @@ func _pointer_move(screen: Vector2) -> void:
 		_update_range()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if sim == null or _active_dialog != null:
+	if sim == null or _active_dialog != null or _loading:
 		return
 	if event is InputEventMouseMotion:
 		if event.position.distance_to(_gesture_start) > 20:
@@ -820,6 +1010,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pointer_move(event.position)
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if _loading: return
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	if event.keycode == KEY_ESCAPE:
@@ -828,11 +1019,15 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		elif sim != null:
 			_show_pause_menu()
 		return
+	if event.keycode == KEY_SPACE:
+		_toggle_tactical_pause()
+
+func _ghost_style(node: Node) -> void:
+	if node is MeshInstance3D: node.material_override = _ghost_material
+	for child in node.get_children(): _ghost_style(child)
 
 func _hide_range() -> void:
-	if is_instance_valid(range_mesh):
-		range_mesh.queue_free()
-	range_mesh = null
+	if is_instance_valid(range_mesh): range_mesh.hide()
 
 func _update_range() -> void:
 	if sim == null:
@@ -844,87 +1039,46 @@ func _update_range() -> void:
 		_hide_range()
 
 func _draw_range(position: Vector3, radius: float, color: Color) -> void:
-	_hide_range()
-	var mesh = ImmediateMesh.new()
-	mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
-	for i in range(97):
-		var angle = float(i) / 96.0 * TAU
-		mesh.surface_add_vertex(Vector3(cos(angle) * radius, 0.15, sin(angle) * radius))
-	mesh.surface_end()
-	range_mesh = _mesh(mesh, color, true)
-	range_mesh.material_override.no_depth_test = true
+	if not is_instance_valid(range_mesh):
+		if _unit_range == null:
+			_unit_range = ImmediateMesh.new()
+			_unit_range.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
+			for i in range(97):
+				var angle = float(i)/96.0*TAU
+				_unit_range.surface_add_vertex(Vector3(cos(angle),.15,sin(angle)))
+			_unit_range.surface_end()
+		range_mesh = _mesh(_unit_range,color,true)
+		range_mesh.material_override.no_depth_test = true
+		world.add_child(range_mesh)
 	range_mesh.position = position
-	world.add_child(range_mesh)
+	range_mesh.scale = Vector3(radius,1,radius)
+	range_mesh.material_override.albedo_color = color
+	range_mesh.show()
 
-func _beam(start: Vector3, end: Vector3, color: Color, duration: float = 0.15) -> void:
-	if start.distance_to(end) < 0.01:
-		return
-	var mesh = CylinderMesh.new()
-	mesh.top_radius = 0.07
-	mesh.bottom_radius = 0.07
-	mesh.height = start.distance_to(end)
-	mesh.radial_segments = 5
-	var beam = _mesh(mesh, color, true)
-	beam.position = (start + end) * 0.5
-	beam.quaternion = Quaternion(Vector3.UP, (end - start).normalized())
-	world.add_child(beam)
-	effects.append({"node": beam, "time": duration, "duration": duration, "kind": "beam"})
+func _beam(start: Vector3, end: Vector3, color: Color, _duration: float = .15) -> void:
+	fx.lightning(start,end,color)
 
 func _effect(event: Dictionary) -> void:
 	match event.kind:
-		"base_damage":
-			sound.scream()
+		"base_damage": sound.scream()
 		"bullet", "mortar":
-			sound.shoot()
-			var mesh = SphereMesh.new()
-			mesh.radius = 0.22 if event.kind == "mortar" else 0.09
-			mesh.height = mesh.radius * 2
-			mesh.radial_segments = 6
-			mesh.rings = 3
-			var node = _mesh(mesh, event.color, true)
-			world.add_child(node)
-			projectile_nodes.append({"node": node, "state": event})
+			sound.shoot(event.tower.type)
+			fx.track(event)
+			_recoil[event.tower.id] = .24 if event.kind == "mortar" else .10
 		"beam":
-			sound.shoot()
-			_beam(event.start, event.end, event.color)
-		"karma":
-			_beam(event.position, event.position + Vector3.UP * 7.0, Color("fff0a0"), 0.35)
-		"explosion", "lava", "ring":
-			var mesh: Mesh
-			var duration = float(event.get("duration", 0.4))
-			var color = event.get("color", Color("ff6a24"))
-			if event.kind == "explosion":
-				var sphere = SphereMesh.new()
-				sphere.radius = 0.5
-				sphere.height = 1.0
-				sphere.radial_segments = 8
-				sphere.rings = 4
-				mesh = sphere
+			if event.has("tower"):
+				sound.shoot("skyguard")
+				fx.lightning(event.start,event.end,event.color)
 			else:
-				var cylinder = CylinderMesh.new()
-				cylinder.top_radius = event.get("radius", 1.0)
-				cylinder.bottom_radius = cylinder.top_radius
-				cylinder.height = 0.04
-				cylinder.radial_segments = 32
-				mesh = cylinder
-			var node = _mesh(mesh, color, true)
-			node.position = event.position + Vector3.UP * 0.15
-			world.add_child(node)
-			effects.append({"node": node, "time": duration, "duration": duration, "kind": event.kind})
+				sound.shoot("sniper")
+				fx.streak(event.start,event.end,event.color)
+		"karma": fx.lightning(event.position + Vector3.UP*8,event.position,Color("ffe4a8"))
+		"impact": fx.impact(event.position,event.color)
+		"explosion": fx.impact(event.position,event.get("color",Color("ffaa54")),true,event.get("radius",1.4))
+		"lava", "ring": fx.ring_at(event.position,event.get("radius",1.0),event.get("color",Color("b85931")),event.get("duration",.6))
 
 func _coin_burst(position: Vector3, count: int) -> void:
-	for i in range(count):
-		var mesh = CylinderMesh.new()
-		mesh.top_radius = 0.317
-		mesh.bottom_radius = 0.317
-		mesh.height = 0.086
-		mesh.radial_segments = 8
-		var node = _mesh(mesh, Color("ffd166"))
-		node.position = position
-		node.rotation.x = PI * 0.5
-		world.add_child(node)
-		var angle = randf() * TAU
-		effects.append({"node": node, "time": 1.0, "duration": 1.0, "kind": "coin", "velocity": Vector3(cos(angle) * randf_range(1.8, 4.3), randf_range(3.5, 6.0), sin(angle) * randf_range(1.8, 4.3))})
+	fx.reward(position,count>8)
 
 func _completed(won: bool) -> void:
 	save_store.record(sim.map_id, sim.wave, sim.hp, sim.kills, won)
@@ -937,36 +1091,36 @@ func _completed(won: bool) -> void:
 	_button("Главное меню", show_menu, rows)
 
 func _physics_process(delta: float) -> void:
-	if sim != null and _active_dialog == null:
+	if sim != null and _active_dialog == null and not _loading:
+		for enemy in sim.enemies:
+			if enemy_nodes.has(enemy.id):
+				enemy_nodes[enemy.id].previous = enemy.position
+				enemy_nodes[enemy.id].previous_phase = enemy.walk_phase
 		sim.tick(min(delta, 0.1))
 
 func _process(delta: float) -> void:
-	if sim != null and camera != null:
+	if sim != null and camera != null and not _loading:
 		var game_delta = max(0.0, sim.game_time - _last_time)
 		_last_time = sim.game_time
+		var interpolation = 1.0 if sim.paused or _active_dialog != null else Engine.get_physics_interpolation_fraction()
 		for enemy in sim.enemies:
 			if not enemy_nodes.has(enemy.id):
 				continue
 			var entry = enemy_nodes[enemy.id]
 			var data = sim.map.enemies[enemy.type]
-			var phase = enemy.walk_phase
+			var phase = lerpf(entry.get("previous_phase",enemy.walk_phase),enemy.walk_phase,interpolation)
 			for joint in entry.joints:
-				var sign = -1.0 if str(joint.name).ends_with("L") or str(joint.name).contains("-1") else 1.0
-				if str(joint.name).contains("leg"):
-					joint.rotation.x = sin(phase) * 0.32 * sign
-				elif str(joint.name).contains("arm"):
-					joint.rotation.x = -sin(phase) * 0.20 * sign
-				elif str(joint.name).contains("wing"):
-					joint.rotation.z = sin(phase) * 0.32 * sign
-				elif str(joint.name).contains("head"):
-					joint.rotation.y = sin(phase * 0.35) * 0.06
-				elif str(joint.name).contains("torso"):
-					joint.scale.y = 1.0 + sin(phase * 0.5) * 0.012
-			entry.node.position = enemy.position + Vector3.UP * (enemy.base_y + (sin(phase) if data.flying else abs(sin(phase))) * data.walk.bobAmp * data.size)
+				if joint.role == 0: joint.node.rotation.x = sin(phase)*.32*joint.sign
+				elif joint.role == 1: joint.node.rotation.x = -sin(phase)*.20*joint.sign
+				elif joint.role == 2: joint.node.rotation.z = sin(phase)*.32*joint.sign
+				elif joint.role == 3: joint.node.rotation.y = sin(phase*.35)*.06
+				elif joint.role == 4: joint.node.scale.y = 1+sin(phase*.5)*.012
+			var visual_position = entry.get("previous",enemy.position).lerp(enemy.position,interpolation)
+			entry.node.position = visual_position + Vector3.UP * (enemy.base_y + (sin(phase) if data.flying else abs(sin(phase))) * data.walk.bobAmp * data.size)
 			var direction = sim.waypoints[enemy.path_index + 1] - sim.waypoints[enemy.path_index]
 			entry.node.rotation = Vector3(cos(phase * 2) * data.walk.get("leanAmp", 0.02), atan2(direction.x, direction.z), sin(phase) * data.walk.swayAmp * data.size)
 			var body_height = 1.9 if enemy.type == "hound" else 1.75 if "ballista" in enemy.type else 3.4
-			entry.bar.position = enemy.position + Vector3.UP * (body_height * data.size + 0.45 + (enemy.base_y - data.size * 0.35 if data.flying else 0.0))
+			entry.bar.position = visual_position + Vector3.UP * (body_height * data.size + 0.45 + (enemy.base_y - data.size * 0.35 if data.flying else 0.0))
 			entry.bar.quaternion = camera.quaternion
 			var ratio = clampf(enemy.hp / enemy.max_hp, 0.001, 1.0)
 			entry.fill.scale.x = ratio
@@ -974,46 +1128,45 @@ func _process(delta: float) -> void:
 		for tower in sim.towers:
 			if not tower_nodes.has(tower.id):
 				continue
-			var turret = tower_nodes[tower.id].find_child("turret", true, false)
+			var turret = tower_nodes[tower.id].get_meta("turret", null)
 			if turret != null and tower.has("target") and not tower.target.is_empty() and tower.target.alive:
 				turret.rotation.y = tower.angle
 			if turret != null and tower.type == "amp":
 				turret.rotation.y += game_delta * 1.5
-		for entry in projectile_nodes.duplicate():
-			if sim.projectiles.has(entry.state):
-				entry.node.position = entry.state.position
-			else:
-				entry.node.queue_free()
-				projectile_nodes.erase(entry)
-		for death in deaths.duplicate():
-			death.time += game_delta
+		for tower in sim.towers:
+			if not _recoil.has(tower.id): continue
+			_recoil[tower.id] = move_toward(_recoil[tower.id],0,game_delta*.8)
+			var turret = tower_nodes[tower.id].get_meta("turret",null)
+			if turret != null:
+				turret.position = -Vector3(sin(tower.angle),0,cos(tower.angle))*_recoil[tower.id]
+		var index = 0
+		while index < deaths.size():
+			var death = deaths[index]
+			death.time += minf(game_delta,.15)
 			var t = death.time
-			if t >= 11.1:
-				death.node.queue_free()
-				deaths.erase(death)
-				continue
-			var eased = 1.0 - pow(1.0 - min(1.0, t / 0.6), 3)
-			death.node.position.y = lerpf(death.start_y, death.target_y, eased)
-			death.node.rotation.z = death.angle + PI * 0.5 * death.direction * eased
-			if t > 9.6:
-				_transparency(death.node, (t - 9.6) / 1.5)
-		for effect in effects.duplicate():
-			effect.time -= game_delta
-			if effect.time <= 0:
-				effect.node.queue_free()
-				effects.erase(effect)
-				continue
-			if effect.kind == "coin":
-				effect.node.position += effect.velocity * game_delta
-				effect.velocity.y -= 12.0 * game_delta
-				effect.node.position.y = max(0.18, effect.node.position.y)
-			elif effect.kind == "explosion":
-				effect.node.scale += Vector3.ONE * game_delta * 4.0
-			_transparency(effect.node, 1.0 - effect.time / effect.duration)
+			var node = death.entry.node
+			if death.spectral:
+				node.scale = Vector3.ONE*maxf(.01,1-t/.9)
+				node.position = death.start + Vector3.UP*t*1.5
+			else:
+				var collapse = smoothstep(0,.75,t)
+				node.rotation.x = death.rotation.x + collapse*(.12 if death.machine else 1.40)
+				node.rotation.z = death.rotation.z + collapse*(.27 if death.machine else .10)
+				node.position.y = lerpf(death.start.y,death.base*.24,collapse)
+				for joint in death.entry.joints:
+					if joint.role == 1: joint.node.rotation.x = collapse*.65
+					elif joint.role == 0: joint.node.rotation.x = collapse*-.35
+					elif joint.role == 3: joint.node.rotation.x = collapse*.35
+				if t > 5.0: node.position.y -= smoothstep(5,7,t)*death.size*3.2
+			if t >= (.9 if death.spectral else 7.0):
+				_release_actor(death.entry)
+				deaths.remove_at(index)
+			else: index += 1
+		fx.render(0 if sim.paused or _active_dialog != null else minf(delta,.05),interpolation)
 		_position_tower_panel()
 		if Engine.get_process_frames() < 8:
 			_layout()
-	if _screenshot_path != "":
+	if _screenshot_path != "" and not _loading:
 		_screenshot_timer -= delta
 		if _screenshot_timer <= 0:
 			var destination = _screenshot_path
@@ -1029,8 +1182,7 @@ func _notification(what: int) -> void:
 func _quit_game() -> void:
 	if sound != null:
 		sound.set_enabled(false)
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await get_tree().create_timer(.12).timeout
 	get_tree().quit()
 
 func _shop_icon(type: String, button: Button) -> void:

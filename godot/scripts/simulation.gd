@@ -301,7 +301,7 @@ func _update_towers(delta: float) -> void:
 		var start = tower.position + muzzle
 		if tower.position.distance_to(target.position) < tower.position.distance_to(start):
 			start = tower.position + Vector3.UP * muzzle.y
-		var shot = {"kind": "bullet", "tower": tower, "target": target, "position": start, "start": start, "end": target.position + Vector3.UP * target.base_y, "color": Color("ffbb33"), "speed": 90.0, "damage": _armor(damage, target), "ttl": 5.0, "progress": 0.0}
+		var shot = {"kind": "bullet", "active": true, "tower": tower, "target": target, "position": start, "start": start, "end": target.position + Vector3.UP * target.base_y, "color": Color("ffbb33"), "speed": 90.0, "damage": _armor(damage, target), "ttl": 5.0, "progress": 0.0}
 		match tower.type:
 			"gun":
 				projectiles.append(shot)
@@ -333,12 +333,17 @@ func _update_towers(delta: float) -> void:
 		effect.emit(shot)
 		tower.cooldown = game_time + 1.0 / float(tower.stats.fireRate)
 
+func _discard_projectile(projectile: Dictionary) -> void:
+	projectile.active = false
+	projectiles.erase(projectile)
+
 func _update_projectiles(delta: float) -> void:
 	var bullets = projectiles.filter(func(p): return p.kind == "bullet")
 	var mortars = projectiles.filter(func(p): return p.kind == "mortar")
 	bullets.reverse()
 	mortars.reverse()
 	for projectile in bullets + mortars:
+		projectile.previous_position = projectile.position
 		projectile.ttl -= delta
 		if projectile.kind == "mortar":
 			projectile.progress += delta * 1.2
@@ -357,18 +362,20 @@ func _update_projectiles(delta: float) -> void:
 							remove_enemy(enemy, true)
 					index += 1
 				effect.emit({"kind": "explosion", "position": projectile.end, "radius": 1.4, "color": Color("ffaa22")})
-				projectiles.erase(projectile)
+				_discard_projectile(projectile)
 		else:
 			if not projectile.target.alive:
-				projectiles.erase(projectile)
+				_discard_projectile(projectile)
 				continue
 			var destination = projectile.target.position + Vector3.UP * projectile.target.base_y
+			projectile.end = destination
 			if projectile.position.distance_to(destination) <= projectile.speed * delta:
+				effect.emit({"kind":"impact", "position":destination, "color":projectile.color})
 				projectile.target.hp -= projectile.damage
 				if projectile.target.hp <= 0:
 					remove_enemy(projectile.target, true)
-				projectiles.erase(projectile)
+				_discard_projectile(projectile)
 			else:
 				projectile.position = projectile.position.move_toward(destination, projectile.speed * delta)
 		if projectile.ttl <= 0:
-			projectiles.erase(projectile)
+			_discard_projectile(projectile)

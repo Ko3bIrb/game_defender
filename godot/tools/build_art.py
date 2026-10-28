@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 from mathutils import Vector, Matrix
 R=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 OUT=R/'assets/models'
 DATA=json.loads((R/'data/game_data.json').read_text())
 random.seed(7814)
@@ -597,95 +598,8 @@ def near_route(x,z,route):
  return best
 
 def world(mapid):
- global FAST_WORLD
- start();FAST_WORLD=True;random.seed(710 if mapid=='ice' else 300);ice=mapid=='ice';data=DATA['maps'][mapid];route=data['waypoints']
- # A gently rolling continuous terrain; the playable corridor remains flat.
- n,m=62,46;verts=[];faces=[]
- for j in range(m):
-  z=-68+j*136/(m-1)
-  for i in range(n):
-   x=-103+i*206/(n-1);d=near_route(x,z,route)
-   y=-.35+min(1,max(0,(d-6)/15))*(math.sin(x*.11)*math.cos(z*.13)*1.2+.8)
-   verts.append((x,y,z))
- for j in range(m-1):
-  for i in range(n-1):
-   a=j*n+i;faces.append((a,a+n,a+n+1,a+1))
- mesh('Snowfield' if ice else 'Basalt terrain',verts,faces,SNOW if ice else BASALT,smooth=True)
- # Two continuous stone borders and a textured, bevelled road ribbon.
- left=[];right=[];samples=[]
- for a,b in zip(route,route[1:]):
-  a,b=Vector(a),Vector(b);steps=max(2,int((b-a).length/.9))
-  for j in range(steps):samples.append(a.lerp(b,j/steps))
- samples.append(Vector(route[-1]))
- for k,p in enumerate(samples):
-  tangent=(samples[min(k+1,len(samples)-1)]-samples[max(0,k-1)]).normalized();normal=Vector((-tangent.z,0,tangent.x))
-  left.append(p+normal*1.9+Vector((0,.05,0)));right.append(p-normal*1.9+Vector((0,.05,0)))
- verts=[]
- for a,b in zip(left,right):verts.extend([a,b])
- mesh('Cobblestone road',verts,[(2*i,2*i+2,2*i+3,2*i+1) for i in range(len(left)-1)],STONE,smooth=True)
- for i in range(0,len(samples),2):
-  for edge in [left,right]:
-   p=edge[i];box('Carved curb',(p.x,.13,p.z),(.75,.24,.55),STONE,bevel=.10)
-  if i%18==0:
-   p=left[i];lantern((p.x,0,p.z),ice)
- for index,s in enumerate(data['spots']):
-  x,y,z=s['position'];tube('Build platform',(x,0,z),(x,.18,z),1.22,STONE,verts=32)
-  ring('Platform inlay',(x,.20,z),1.0,.035,ICE if s['restricted_to'] else GOLD)
-  for i in range(8):
-   a=i*math.tau/8;box('Platform block',(x+math.cos(a)*1.17,.12,z+math.sin(a)*1.17),(.28,.26,.28),STONE,bevel=.04)
- # All decoration respects routes and every platform.
- positions=[]
- for k in range(125):
-  x=random.uniform(-85,85);z=random.uniform(-44,44)
-  if near_route(x,z,route)<6 or any(math.hypot(x-s['position'][0],z-s['position'][2])<3.5 for s in data['spots']):continue
-  if abs(x-route[0][0])<9 and abs(z-route[0][2])<9:continue
-  if abs(x-route[-1][0])<10 and abs(z-route[-1][2])<9:continue
-  if ice and k%3!=0:fir((x,0,z),random.uniform(3,7),True)
-  else:
-   rock((x,.2,z),random.uniform(.7,3),ice)
-   if not ice and k%3==0:
-    # Dead trees and local ember fissures are quieter than an orange full-screen wash.
-    tube('Dead trunk',(x,0,z),(x,3.6,z),.24,WOOD,r2=.08)
-    for sign in [-1,1]:tube('Bare branch',(x,2,z),(x+sign*1.3,3.1,z+.3),.085,WOOD,r2=.015)
-    curve('Lava seam',[(x-2,.05,z),(x-1,.06,z+.5),(x+.2,.05,z+.2),(x+1,.05,z+1.3)],.055,EMBER)
- if not ice:
-  # A winding, dim fissure follows the actual terrain instead of floating over it.
-  keys=[Vector((-88,0,36)),Vector((-57,0,32)),Vector((-29,0,39)),Vector((3,0,34)),Vector((31,0,40)),Vector((59,0,33)),Vector((88,0,39))]
-  path=[]
-  for i in range(len(keys)-1):
-   p0=keys[max(0,i-1)];p1=keys[i];p2=keys[i+1];p3=keys[min(len(keys)-1,i+2)]
-   for j in range(18):
-    t=j/18
-    point=.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t)
-    d=near_route(point.x,point.z,route)
-    point.y=-.35+min(1,max(0,(d-6)/15))*(math.sin(point.x*.11)*math.cos(point.z*.13)*1.2+.8)+.10
-    path.append(point)
-  for bank,mat in [(True,BASALT),(False,LAVA)]:
-   verts=[]
-   for i,point in enumerate(path):
-    tangent=(path[min(i+1,len(path)-1)]-path[max(0,i-1)]).normalized();normal=Vector((-tangent.z,0,tangent.x)).normalized()
-    width=(.72 if bank else .30)*(1+.22*math.sin(i*1.7))
-    at=point-Vector((0,.025 if bank else 0,0))
-    verts.extend([at+normal*width,at-normal*width])
-   mesh('Basalt fissure' if bank else 'Cooling lava',verts,[(i*2,i*2+2,i*2+3,i*2+1) for i in range(len(path)-1)],mat)
- # Background ridges are solid meshes with coherent surfaces.
- for index,x in enumerate([-85,-50,-15,25,65,100]):
-  height=random.uniform(18,29);width=random.uniform(18,26);verts=[];faces=[];rings=12;segments=30
-  for layer in range(rings):
-   t=layer/(rings-1);r=width*max(.015,1-t)**.85
-   for k in range(segments):
-    angle=k*math.tau/segments;noise=1+.12*math.sin(angle*7+index)+random.uniform(-.045,.045)
-    verts.append((x+math.cos(angle)*r*noise+math.sin(t*3)*2,t*height, -60+math.sin(angle)*r*.65))
-  for j in range(rings-1):
-   for k in range(segments):
-    a=j*segments+k;b=j*segments+(k+1)%segments;faces.append((a,b,b+segments,a+segments))
-  mesh('Mountain ridge',verts,faces,STONE if ice else BASALT,smooth=True)
-  if ice:
-   upper=[Vector(v)+Vector((0,.05,0)) for v in verts]
-   mesh('Mountain snow',upper,faces[(rings//2)*segments:],SNOW,smooth=True)
- fortress(route[-1],ice);portal(route[0],ice)
- FAST_WORLD=False;flush_world()
- export('world_'+mapid)
+ from landscape import build_landscape
+ build_landscape(globals(),mapid)
 
 def menu():
  start();random.seed(420)
@@ -714,7 +628,9 @@ if mode in ['all','towers']:
 if mode in ['all','characters']:
  for mapdata in DATA['maps'].values():
   for kind,d in mapdata['enemies'].items():enemy(kind,d)
-if mode in ['all','worlds']:
+if mode in ['all','worlds','terrain']:
+ from landscape import build_props
+ if mode!='terrain':build_props(globals())
  for mapid in ['ice','hell']:world(mapid)
 if mode in ['all','menu']:menu()
 manifest={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.glob('*.glb'))}

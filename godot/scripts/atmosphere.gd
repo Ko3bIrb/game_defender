@@ -88,17 +88,20 @@ func configure(scene: Node3D, id: String) -> void:
  else:
   var data = JSON.parse_string(FileAccess.get_file_as_string("res://data/game_data.json")).maps[id]
   var route = data.waypoints
-  var points: Array[Vector3] = []
-  for i in range(route.size() - 1):
-   var a = Vector3(route[i][0], 0, route[i][2])
-   var b = Vector3(route[i+1][0], 0, route[i+1][2])
-   var count = maxi(2, int(a.distance_to(b) / 0.9))
-   for j in range(count): points.append(a.lerp(b, float(j) / count))
-  points.append(Vector3(route[-1][0], 0, route[-1][2]))
-  for i in range(0, points.size(), 36):
-   var direction = (points[mini(i + 1, points.size() - 1)] - points[maxi(0, i - 1)]).normalized()
-   var at = points[i] + Vector3(-direction.z, 0, direction.x) * 1.9 + Vector3.UP * 2.3
-   _light(scene, at, Color("ffcf98"), 3.8, 10, i % 108 == 0)
+  var scenery = JSON.parse_string(FileAccess.get_file_as_string("res://data/landscapes.json"))[id]
+  for i in range(scenery.get("lanterns",[]).size()):
+   var p = scenery.lanterns[i]
+   _light(scene,Vector3(p[0],p[1],p[2]),Color("ffca8b"),3.2,10,i%4==0)
+  for p in scenery.get("homes",[]):
+   _light(scene,Vector3(p[0],p[1],p[2]),Color("ffd39a"),1.8,7)
+  for p in scenery.fires:
+   _light(scene,Vector3(p[0],p[1]+1,p[2]),Color("ff9b4c"),4.5,12,true)
+  if winter:
+   _light(scene,Vector3(0,2,-25),Color("6eabbc"),2.5,23)
+   settings.ssr_enabled = true
+  else:
+   for at in [Vector3(-3,1,3),Vector3(-4,1,-21),Vector3(-10,25,-52)]:
+    _light(scene,at,Color("ff6a24"),5.0,24)
   var castle = Vector3(route[-1][0], 0, route[-1][2])
   for offset in [Vector3(-4,3,-3), Vector3(-4,3,3), Vector3(1,6,0)]:
    _light(scene, castle + offset, Color("ffd3a0"), 4.0, 13, true)
